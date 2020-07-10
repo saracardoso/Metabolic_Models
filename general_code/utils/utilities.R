@@ -1,19 +1,24 @@
 #Directories:
-base_dir = '~/Documents/PhD'
+base_dir = getwd()
 
-T_Cell_Data_Repo = paste(base_dir, 'T_Cell_Data_Repo', sep='/')
+Omics_data_Repos = 'home/scardoso/Documents/PhD/Omics_Data_Repos'
+T_Cell_Data_Repo = paste(Omics_data_Repos, 'T_Cell_Data_Repo', sep='/')
 T_Cell_Data_Repo_Process_Scripts = paste(T_Cell_Data_Repo, 'Process_Scripts', sep='/')
 T_Cell_Data_Repo_Process_Scripts_utils = paste(T_Cell_Data_Repo_Process_Scripts, 'utils', sep='/')
 
-Metabolic_Models_Repo = paste(base_dir, 'Metabolic_Models', sep='/')
-Metabolic_Models_Repo_general = paste(Metabolic_Models_Repo, 'general', sep='/')
-Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general, 'utils', sep='/')
+Metabolic_Models_Repo_general_code = paste(base_dir, 'general_code', sep='/')
+Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general_code, 'utils', sep='/')
+Metabolic_Models_Repo_general_utils_entrez_genes = paste(Metabolic_Models_Repo_general_utils, 'entrez_genes', sep='/')
 
 #Files:
 genes_lengths_GRCh38p13_file = paste(T_Cell_Data_Repo_Process_Scripts_utils, 'genes_lengths_GRCh38p13.txt', sep='/')
+
 recon_genes_orig_file = paste(Metabolic_Models_Repo_general_utils, 'recon_genes_orig.tsv', sep='/')
-recon_3dmodel_genes_orig_file = paste(Metabolic_Models_Repo_general_utils, 'recon_3dmodel_genes_orig.txt', sep='/')
-recon3DModel_genes_new_file = paste(Metabolic_Models_Repo_general_utils, 'recon3DModel_genes.csv', sep='/')
+
+recon3DModel_301_genes_file = paste(Metabolic_Models_Repo_general_utils_entrez_genes, 'recon3D_genes.txt', sep='/')
+recon3DModel_301_gene_mapping_new_file = paste(Metabolic_Models_Repo_general_utils, 'recon3D_gene_mapping.csv', sep='/')
+
+recon3DModel_301_consistent_genes_file = paste(Metabolic_Models_Repo_general_utils_entrez_genes, 'recon3D_consistent_genes.txt', sep='/')
 
 
 
@@ -29,7 +34,7 @@ recon_genes = read.csv(recon_genes_orig_file, sep='\t')
 recon_genes$gene_number = as.character(recon_genes$gene_number)
 for(x in 1:length(recon_genes$gene_number)) recon_genes$gene_number[x] = strsplit(recon_genes$gene_number[x], '[.]')[[1]][1]
 #Read file with genes (entrez) in the recon3d model:
-recon3dmodel_gene_ids = as.character(read.table(recon_3dmodel_genes_orig_file)$V1)
+recon3dmodel_gene_ids = as.character(read.table(recon3DModel_301_genes_file)$V1)
 
 #Get unique recon genes:
 unique_recon_genes = recon_genes[!duplicated(recon_genes$gene_number),]
@@ -37,7 +42,7 @@ View(unique_recon_genes)
 
 #Get unique recon 3d model genes:
 recon3dmodels_gene_ids_unique = c()
-for (x in strsplit(recon3dmodel_gene_ids, '[.]')) recon3dmodels_gene_ids_unique = unique(c(recon3dmodels_gene_ids_unique, x[1]))
+for (x in strsplit(recon3dmodel_gene_ids, '[_]')) recon3dmodels_gene_ids_unique = unique(c(recon3dmodels_gene_ids_unique, x[1]))
 
 #Get info only for the recon genes in the recon3d model:
 recon3dmodel_genes_info = unique_recon_genes[match(recon3dmodels_gene_ids_unique, unique_recon_genes$gene_number),]
@@ -73,7 +78,18 @@ recon3DModel_genes = data.frame(entrez=names(recon3d_entrez_ensembl),
 View(recon3DModel_genes)
 #NOTE: There are two ensembl genes that are duplicated (each one is mapped to two different entrez ids)
 
-write.csv(recon3DModel_genes, recon3DModel_genes_new_file, row.names=F)
+write.csv(recon3DModel_genes, recon3DModel_301_gene_mapping_new_file, row.names=F)
 
 
+#########################
+##Get unique entrez ids##
+#########################
+recon3dmodel_consistent_gene_ids = as.character(read.table(recon3DModel_301_consistent_genes_file)$V1)
+recon3dmodel_consistent_gene_ids_unique = c()
+for (x in strsplit(recon3dmodel_consistent_gene_ids, '[_]')) recon3dmodel_consistent_gene_ids_unique = unique(c(recon3dmodel_consistent_gene_ids_unique, x[1]))
+write.table(recon3dmodel_consistent_gene_ids_unique, recon3DModel_301_consistent_genes_file, row.names=F, col.names=F)
 
+recon3dmodel_gene_ids = as.character(read.table(recon3DModel_301_genes_file)$V1)
+recon3dmodel_gene_ids_unique = c()
+for (x in strsplit(recon3dmodel_gene_ids, '[_]')) recon3dmodel_gene_ids_unique = unique(c(recon3dmodel_gene_ids_unique, x[1]))
+write.table(recon3dmodel_gene_ids_unique, recon3DModel_301_genes_file, row.names=F, col.names=F)

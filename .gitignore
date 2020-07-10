@@ -1,2 +1,5 @@
 *.DS_Store
 README.html
+.Rproj.user
+venv/
+.idea/
