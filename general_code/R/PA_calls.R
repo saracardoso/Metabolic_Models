@@ -5,35 +5,20 @@ Metabolic_Models_Repo = paste(base_dir, 'Metabolic_Models', sep='/')
 Metabolic_Models_Repo_general_code = paste(Metabolic_Models_Repo, 'general_code', sep='/')
 Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general_code, 'utils', sep='/')
 
-#Files:
-recon3DModel_genes_file = paste(Metabolic_Models_Repo_general_utils, 'recon3DModel_genes.csv', sep='/')
-recon3DModel_GPR_file = paste(Metabolic_Models_Repo_general_utils, 'recon3DModel_GPR.txt', sep='/')
 
 
 
-
-
-#############
-###PA CALLS##
-#############
-
-#-- MAIN FUNCTION
-
-
-
-
-
-###########################
-
-#---READ DATA FOR PA CALLS
+###################
+##READ OMICS DATA##
+###################
 
 #ensembl_genes    -->   vector with the ensembl gene ids to consider. Must correspond to those that are present in the
 #                       generic model that will be used for reconstruction
-PA_prepare_data = function(ensembl_genes,
-                                 transcriptomics_data_files = list(RNAseq=NULL, Microarray=NULL),
-                                 transcriptomics_metadata_files = list(RNAseq=NULL, Microarray=NULL),
-                                 proteomics_data_files = list(dataset_name=NULL),
-                                 proteomics_metadata_files = list(dataset_name=NULL)){
+read_omics_data = function(ensembl_genes,
+                           transcriptomics_data_files = list(RNAseq=NULL, Microarray=NULL),
+                           transcriptomics_metadata_files = list(RNAseq=NULL, Microarray=NULL),
+                           proteomics_data_files = list(dataset_name=NULL),
+                           proteomics_metadata_files = list(dataset_name=NULL)){
   if(is.null(transcriptomics_data_files$RNAseq)&is.null(transcriptomics_data_files$Microarray))
     stop("Please give a file path to the RNAseq data (transcriptomics_data_files$RNAseq) and/or
          a file path to the Microarray data (transcriptomics_data_files$Microarray)")
@@ -57,7 +42,7 @@ PA_prepare_data = function(ensembl_genes,
                                                                                       ') does not have a corresponding metadata file path under same name',
                                                                                       sep=''))
     expression_data$Transcriptomics[[transcriptomics_type]]$metadata = read.csv(transcriptomics_metadata_files[[transcriptomics_type]],
-                                                                row.names = 1)
+                                                                                row.names = 1)
   }
   
   #Get proteomics data and maintain only genes in recond3DModel:
@@ -82,11 +67,86 @@ PA_prepare_data = function(ensembl_genes,
 
 
 
+
+
+#############
+###PA CALLS##
+#############
+
+#-- MAIN FUNCTION
+
+PA_reaction_calls = function(omics_data, or = 'MAX',
+                             gene_mapping_file, map_file_sep=',', map_file_header=TRUE,
+                             gpr_file, gpr_file_sep='\t', gpr_file_header=FALSE){
+  
+  # Get GPR rules for reactions in the generic model:
+  gpr_rules = read.csv(gpr_rules_file, sep=gpr_file_sep, header=gpr_file_header)
+  gpr_rules[,2] = gsub('[.][1-9]+', '',gpr_rules[,2]) #Remove 'version' .1, .2, ...
+  
+  # Get gene mapping: entrez (mandatory) - ensembl (mandatory) - symbol (optional)
+  gene_mapping = read.csv(gene_mapping_file, sep=map_file_sep, header=map_file_header)
+  
+  # Gene calls:
+  if(is.null(omics_data$Proteomics)){
+    #Transcriptomics calls:
+    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Trancriptomics, gene_mapping, only_trans=T)
+    #Get named vector:
+    transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics$Transcriptomics
+    names(transcriptomics_gene_calls) = rownames(transcriptomics_calls$calls_per_omics)
+    #Get final gene calls:
+    gene_calls = PA_gene_calls(transcriptomics_gene_calls)
+  }
+  else{
+    #Transcriptomics calls:
+    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Trancriptomics, gene_mapping, only_trans=F)
+    #Get named vector:
+    transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics$Transcriptomics
+    names(transcriptomics_gene_calls) = rownames(transcriptomics_calls$calls_per_omics)
+    #Get transcriptomics presence:
+    transcriptomics_presence = rowMeans(transcriptomics_calls$calls_per_omis[,-dim(transcriptomics_calls$calls_per_omis)[2]])
+    
+    #Proteomics calls:
+    proteomics_calls = PA_proteomics_calls(omics_data$Proteomics, gene_mapping)
+    #Get named vector:
+    proteomics_gene_calls = proteomics_calls$calls_per_omics$Proteomics
+    names(proteomics_gene_calls) = rownames(proteomics_calls$calls_per_omics)
+    #Get proteomics presence:
+    proteomics_presence = rowMeans(proteomics_calls$calls_per_omis[,-dim(proteomics_calls$calls_per_omis)[2]])
+    
+    #Get final gene calls:
+    gene_calls = PA_gene_calls(transcriptomics_gene_calls, transcriptomics_presence=transcriptomics_presence,
+                               proteomics_gene_calls=proteomics_gene_calls, proteomics_presence=proteomics_presence)
+  }
+  
+  # Reaction calls:
+  reaction_calls = PA_from_gene_to_reaction_calls(gene_calls, gpr_rules, or = or)
+  
+  # Reaction calls for each algorithm:
+  algorithm_calls = PA_algorithms_reaction_calls(reaction_calls)
+  
+  # Store Final Results:
+  results = list()
+  results$calls_per_sample = list()
+  results$calls_per_sample$Transcriptomics = transcriptomics_calls$calls_per_sample
+  if(!is.null(omics_data$Proteomics))
+    results$calls_per_sample$Proteomics = proteomics_calls$calls_per_sample
+  results$gene_scores = gene_calls
+  results$reaction_calls = algorithm_calls
+  
+  return(results)
+}
+
+
+
+
+###########################
+
+
 #---GENE PA CALLS: TRANSCRIPTOMICS
 
 #gene_mapping   -->   data.frame with columns 'ensembl', 'entrez' and 'symbol'. Corresponds to the genes that are present
 #                     in the model to be used as generic model in the reconstruction
-PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping){
+PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_trans=T){
   
   #PA calls will be stored in this dataset:
   if(!'RNAseq'%in%names(transcriptomics_data)) RNAseq_init = rep(NA,length(gene_mapping$entrez))
@@ -139,25 +199,50 @@ PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping){
     
   }
   
-  #Final PA calls:
-  for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
-    
-    if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==2){ #If there are PA calls from both data types
-      average_gene = mean(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Average the score
-      if(average_gene<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If average smaller than 0.5, score 0 (not present)
-      else if(average_gene>=0.75) final_gene_calls[gene, 'Transcriptomics'] = 2 #If average greater than 0.75,
-                                                                          #score 2 (high confidence for being present)
-      else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.75, score 1 (medium confidence for being present)
+  # Final PA calls:
+  
+  if(!only_trans){ #If there will be proteomics scores too
+               #Here, scores will be -1, 0, 1, 2
+    for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
+      if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==2){ #If there are PA calls from both data types
+        average_gene = mean(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Average the score
+        if(average_gene<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If average smaller than 0.5, score 0 (not present)
+        else if(average_gene>=0.75) final_gene_calls[gene, 'Transcriptomics'] = 2 #If average greater than 0.75,
+                                                                            #score 2 (high confidence for being present)
+        else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.75, score 1 (medium confidence for being present)
+      }
+      else if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==1){#If there are PA calls only from one data type
+        gene_value = na.omit(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Get the score from that data type
+        if(gene_value<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If score smaller than 0.5, score 0 (not present)
+        else if(gene_value>=0.8) final_gene_calls[gene, 'Transcriptomics'] = 2 #This time, score must be greater than 0.8 to be
+                                                                         #scored 2 (high confidence for being present)
+        else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.8, score 1 (medium confidence for being present)
+      }
+      #If is not in either --> it will be -1
     }
-    else if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==1){#If there are PA calls only from one data type
-      gene_value = na.omit(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Get the score from that data type
-      if(gene_value<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If score smaller than 0.5, score 0 (not present)
-      else if(gene_value>=0.8) final_gene_calls[gene, 'Transcriptomics'] = 2 #This time, score must be greater than 0.8 to be
-                                                                       #scored 2 (high confidence for being present)
-      else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.8, score 1 (medium confidence for being present)
-    }
-    #If is not in either --> it will be -1
   }
+  else{ #If there will not be proteomics scores to use, transcriptomics scores will be more tight
+        #Here, scores will be -1, 0, 1, 2, 3
+    for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
+      if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==2){ #If there are PA calls from both data types
+        sum_gene = sum(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Summ the scores of both types
+        average_gene = mean(rna_microarray_gene)  #Average the score
+        if(average_gene<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If average smaller than 0.5, score 0
+        else if(sum_gene>=1.5) final_gene_calls[gene, 'Transcriptomics'] = 3 #If both types greater than 0.75,
+                                                                            #score 3
+        else final_gene_calls[gene, 'Transcriptomics'] = 1 #Other cases, score 1
+      }
+      else if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==1){#If there are PA calls only from one data type
+        gene_value = na.omit(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Get the score from that data type
+        if(gene_value<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If score smaller than 0.5, score 0
+        else if(gene_value>=0.8) final_gene_calls[gene, 'Transcriptomics'] = 2 #This time, score must be greater than 0.8 to be
+                                                                              #scored 2
+        else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.8, score 1
+      }
+      #If is not in either --> it will be -1
+    }
+  }
+  
   PA_res$calls_per_omics = final_gene_calls
   
   return(PA_res)
@@ -176,7 +261,7 @@ PA_proteomics_calls = function(proteomics_data, gene_mapping){
   for(exp_data in names(proteomics_data)){
     if(!is.null(proteomics_data[[exp_data]]$data)) final_gene_calls = cbind(final_gene_calls, rep(NA,length(gene_mapping$entrez)))
   }
-  final_gene_calls = cbind(final_gene_calls, rep(NA,length(gene_mapping$entrez)))
+  final_gene_calls = cbind(final_gene_calls, rep(-1,length(gene_mapping$entrez)))
   colnames(final_gene_calls) = c(names(proteomics_data), 'Proteomics')
   row.names(final_gene_calls) = gene_mapping$entrez
   
@@ -223,15 +308,36 @@ PA_proteomics_calls = function(proteomics_data, gene_mapping){
   }
   
   #Final PA calls:
-  for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
-    average_gene = mean(as.numeric(final_gene_calls[gene,dim(final_gene_calls)[2]-1])) #Average the score
-    if(!is.na(average_gene)){
-      if(average_gene<0.5) final_gene_calls[gene, 'Proteomics'] = 0 #If score smaller than 0.5, score 0 (not present)
-      else if(average_gene>=0.8) final_gene_calls[gene, 'Proteomics'] = 2 #This time, score must be greater than 0.8 to be
-      #scored 2 (high confidence for being present)
-      else final_gene_calls[gene, 'Proteomics'] = 1 #If between 0.5 and 0.8, score 1 (medium confidence for being present)
+  if(length(names(proteomics_data))==1){ # If only one dataset available
+    for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
+      score_gene = as.numeric(final_gene_calls[gene,dim(final_gene_calls)[2]-1])
+      if(!is.na(score_gene)){
+        if(score_gene<0.5) final_gene_calls[gene, 'Proteomics'] = 0 #If score smaller than 0.5, score 0 (not present)
+        else if(score_gene>=0.8) final_gene_calls[gene, 'Proteomics'] = 2 #This time, score must be greater than 0.8 to be
+        #scored 2 (high confidence for being present)
+        else final_gene_calls[gene, 'Proteomics'] = 1 #If between 0.5 and 0.8, score 1 (medium confidence for being present)
+      }
+    #If no data on gene: score is -1
     }
-    
+  }
+  else{ # If more than one dataset available
+    for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
+      if(sum(!is.na(final_gene_calls[gene,1:dim(final_gene_calls)[2]-1]))>=2){ #If there are PA calls at least two data types
+        average_gene = mean(as.numeric(na.omit(final_gene_calls[gene,1:dim(final_gene_calls)[2]-1]))) #Average the score
+        if(average_gene<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If average smaller than 0.5, score 0 (not present)
+        else if(average_gene>=0.75) final_gene_calls[gene, 'Transcriptomics'] = 2 #If average greater than 0.75,
+                                                                                  #score 2 (high confidence for being present)
+        else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.75, score 1 (medium confidence for being present)
+      }
+      else if(sum(!is.na(final_gene_calls[gene,1:dim(final_gene_calls)[2]-1]))==1){#If there are PA calls only from one data type
+        gene_value = na.omit(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Get the score from that data type
+        if(gene_value<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If score smaller than 0.5, score 0 (not present)
+        else if(gene_value>=0.8) final_gene_calls[gene, 'Transcriptomics'] = 2 #This time, score must be greater than 0.8 to be
+        #scored 2 (high confidence for being present)
+        else final_gene_calls[gene, 'Transcriptomics'] = 1 #If between 0.5 and 0.8, score 1 (medium confidence for being present)
+      }
+      #If is not in either --> it will be -1
+    }
   }
   PA_res$calls_per_omics = final_gene_calls
   
@@ -239,130 +345,129 @@ PA_proteomics_calls = function(proteomics_data, gene_mapping){
 }
 
 
+#---FINAL GENE CALLS
+
+PA_gene_calls = function(transcriptomics_gene_calls, transcriptomics_presence=NULL, 
+                         proteomics_gene_calls=NULL, proteomics_presence = NULL){
+  
+  # IDs between transcriptomics and proteomics (if available) must match:
+  if(!is.null(proteomics_gene_calls)){
+    if(sum(is.na(match(names(proteomics_gene_calls), names(transcriptomics_gene_calls))))>0)
+      stop('Gene IDs do not match entirely between the teo omics.')
+    if(is.null(proteomics_presence) | is.null(transcriptomics_presence))
+      stop('transcriptomics_presence and proteomics_presence must be given when both proteomics and transcriptomics
+           score are given.')
+  }
+  
+  # Results will be stored here:
+  final_gene_scores = c()
+  
+  # In case both omics are available:
+  if(!is.null(proteomics_gene_calls)){
+    for(gene in names(transcriptomics_gene_calls)){
+      both_scores = c(transcriptomics_gene_calls[gene], proteomics_gene_calls[gene])
+      scores_sum = sum(both_scores)
+      if(transcriptomics_gene_calls[gene]!=-1 & proteomics_gene_calls[gene]!=-1){
+        if(scores_sum == 4) final_gene_scores = c(final_gene_scores, 3)
+        else if(scores_sum == 3) final_gene_scores = c(final_gene_scores, 2)
+        else if(scores_sum <= 1) final_gene_scores = c(final_gene_scores, 0)
+        else if(both_scores == c(1,1)) final_gene_scores = c(final_gene_scores, 1)
+        else{ #When one of the omics is 2 and the other 0
+          samps_presence = c(transcriptomics_presence[gene], proteomics_presence[gene])[both_scores!=0]
+          if(samps_presence==0) final_gene_scores = c(final_gene_scores, 0)
+          else final_gene_scores = c(final_gene_scores, 1)
+        }
+      }
+      else if(transcriptomics_gene_calls[gene]!=-1 & proteomics_gene_calls[gene]!=-1) final_gene_scores = c(final_gene_scores, -1)
+      else{
+        if(scores_sum == 1) final_gene_scores = c(final_gene_scores, 1)
+        else final_gene_scores = c(final_gene_scores, 0)
+      }
+    }
+  }
+  else final_gene_scores = transcriptomics_gene_calls
+  
+  names(final_gene_scores) = names(transcriptomics_gene_calls)
+  return(transcriptomics_gene_calls)
+}
+
+
 #---FROM GENE TO REACTION CALLS
 
 #RULES        -->   OR: MAX or SUM; AND: MIN.
-#gene_calls   -->   data.frame of one column. Row names: entrez gene ids. First column: gene scores.
+#gene_calls   -->   named vector. Names: entrez gene ids. Values: gene scores.
 #gpr_rules    -->   data.frame with two columns. First: reaction IDs from the generic model. Second: GPR rules
-PA_from_gene_to_reaction_calls = function(gene_calls, gpr_rules_filtered, or = 'MAX'){
-  
-  #Get GPR rules for each reaction in the recon3D model:
-  ##PUT THIS IN SEPARATE FUNCTION::
-  #recon3D_gpr_rules = read.table(recon3DModel_GPR_file, sep='\t')
-  #recon3D_gpr_rules_filtered = recon3D_gpr_rules[!recon3D_gpr_rules[,2]=='',] #Remove reactions without GPRs
-  #recon3D_gpr_rules_filtered[,2] = gsub('[.][1-9]+', '',recon3D_gpr_rules_filtered[,2]) #Remove 'version' .1, .2, ...
+PA_from_gene_to_reaction_calls = function(gene_calls, gpr_rules, or = 'MAX'){
   
   #Reaction calls:
   reaction_calls = c()
-  for(reaction in 1:dim(gpr_rules_filtered)[1]){
-    gpr_str = gpr_rules_filtered[reaction,2]
+  for(reaction in 1:dim(gpr_rules)[1]){
+    gpr_str = gpr_rules[reaction,2]
     gpr_str = gsub('[(]','',gpr_str) #Remove (), they won't be necessary.
     gpr_str = gsub('[)]','',gpr_str)
     splitted_ors = strsplit(gpr_str,' or ')[[1]] #Split into different elements through or
-    for(i in 1:length(splitted_ors)){ #Get minimum value in each of these elements
-      genePA_calls = gene_calls[strsplit(splitted_ors[i],' and ')[[1]], 1]
-      splitted_ors[i] = min(genePA_calls)
-    }
-    if(length(na.omit(splitted_ors))==0) reaction_calls = c(reaction_calls, 0)
+    if(length(splitted_ors)==0) reaction_calls = c(reaction_calls, NA) # Reaction with no gene associated
     else{
-      if(or=='MAX') reaction_calls = c(reaction_calls, max(as.numeric(na.omit(splitted_ors)))) #Between the resulting scores of the elements, get
-                                                                                               #maximum value (as these are connected through or)
-      else if(or=='SUM') reaction_calls = c(reaction_calls, sum(as.numeric(na.omit(splitted_ors)))) #Between the resulting scores of the elements, sum
-                                                                                                    #the values (as these are connected through or)
+      for(i in 1:length(splitted_ors)){ #Get minimum value in each of these elements
+        genePA_calls = gene_calls[strsplit(splitted_ors[i],' and ')[[1]]]
+        splitted_ors[i] = min(genePA_calls)
+      }
+      if(or=='MAX')
+        reaction_calls = c(reaction_calls, max(as.numeric(splitted_ors))) #Between the resulting scores of the elements, get
+                                                                          #maximum value (as these are connected through or)
+      else if(or=='SUM'){
+        splitted_ors = splitted_ors[splitted_ors!=-1] #Take out genes with no experimental data to make the sum
+        if(length(splitted_ors)==0) #But if there are no genes with experimental data, give score -1
+          reaction_calls = c(reaction_calls -1)
+        else
+          reaction_calls = c(reaction_calls, sum(as.numeric(splitted_ors))) #Between the resulting scores of the elements, sum
+                                                                            #the values (as these are connected through or)
+      }
       else stop('Invalid OR rule. or argument must be MAX or SUM.')
     }
+    
   }
-  names(reaction_calls) = gpr_rules_filtered[,1]
+  names(reaction_calls) = gpr_rules[,1]
   
   return(reaction_calls)
 }
 
 
-#-- FINAL REACTION CALLS
+#-- FINAL GENE CALLS
 
-PA_reaction_calls = function(transcriptomics_reaction_calls, proteomics_reaction_calls=NULL){
+PA_algorithms_reaction_calls = function(reaction_calls){
   
+  # Get the ids for the reactions.
+  reaction_ids = names(reaction_calls)
+  
+  # Scores will be calculated for the following algorithms:
+  algos = c('FastCore','GIMME','IMAT','CORDA','tINIT')
+  
+  #Initiate data.frame where results will be stored:
+  reaction_calls = data.frame(original=reaction_calls,
+                              FastCore=rep('-', length(reaction_ids)),
+                              GIMME=rep(-1, length(reaction_ids)),
+                              IMAT=rep(-1, length(reaction_ids)),
+                              CORDA=rep('-', length(reaction_ids)),
+                              tINIT=rep(-2, length(reaction_ids)),
+                              row.names=reaction_ids)
+  
+  # Calculate Reaction Scores for each algorithm:
+  for(reaction in reaction_ids){
+    if(!is.na(reaction_calls[reaction])){
+      if(reaction_calls[reaction] = 3)
+        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 20)
+      else if(reaction_calls[reaction] = 2)
+        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 15)
+      else if(reaction_calls[reaction] = 1)
+        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 1, 1, 'Medium', 10)
+      else if(reaction_calls[reaction] = 0)
+        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('-', 0, 0, 'Negative', -8)
+    }
+  }
+  
+  return(reaction_calls)
 }
-
-
-
-
-
-
-
-
-final_gene_PA_calls = function(transcriptomics_calls, proteomics_calls){
-  
-  #Results will be stored here:
-  final_gene_calls = list()
-  final_gene_calls$calls_per_sample = list()
-  final_gene_calls$calls_per_sample$Transcriptomics = transcriptomics_calls$calls_per_sample
-  if(!is.null(proteomics_calls)) final_gene_calls$calls_per_sample$Proteomics = proteomics_calls$calls_per_sample
-  final_gene_calls$calls_per_omics = list()
-  final_gene_calls$calls_per_omics$Transcriptomics = transcriptomics_calls$calls_per_omics
-  if(!is.null(proteomics_calls)) final_gene_calls$calls_per_omics$Proteomics = proteomics_calls$calls_per_omics
-  
-  #Get mapping between entrez, ensembl and gene ids:
-  recon3DModel_genes = read.csv(recon3DModel_genes_file, header=T)
-  
-  #Get final gene PA calls:
-  final_calls = c()
-  
-  if(!is.null(proteomics_calls)){
-  for(gene in recon3DModel_genes$entrez){
-    transcriptomics_score = final_gene_calls$calls_per_omics$Transcriptomics[as.character(gene),'Transcriptomics']
-    proteomics_score = final_gene_calls$calls_per_omics$Proteomics[as.character(gene),'Proteomics']
-    if(is.na(transcriptomics_score)&is.na(proteomics_score)) gene_score = 0 # If no data on gene
-    else if(sum(is.na(c(transcriptomics_score, proteomics_score)))==1){ # If one of the omics does not have data for the gene
-      if(na.omit(c(transcriptomics_score, proteomics_score))==2) gene_score = 1
-      else gene_score = 0
-    }
-    else{ # When both omics have data for the gene
-      if(transcriptomics_score+proteomics_score <= 1) gene_score = 0
-      else if(abs(transcriptomics_score-proteomics_score) == 2){
-        if(transcriptomics_score==2 & sum(na.omit(as.numeric(final_gene_calls$calls_per_omics$Proteomics[as.character(gene),])))==0) gene_score = 0
-        else if(proteomics_score==2 & sum(na.omit(as.numeric(final_gene_calls$calls_per_omics$Transcriptomics[as.character(gene),])))==0) gene_score = 0
-        else gene_score = 1
-      }
-      else if(transcriptomics_score+proteomics_score>=3) gene_score = 2
-      else gene_score = 1
-    }
-    final_calls = c(final_calls, gene_score)
-  }
-  final_gene_calls$final_gene_calls = data.frame(Transcriptomics=final_gene_calls$calls_per_omics$Transcriptomics[,'Transcriptomics'],
-                                                 Proteomics=final_gene_calls$calls_per_omics$Proteomics[,'Proteomics'],
-                                                 Final=final_calls,
-                                                 row.names=recon3DModel_genes$entrez)
-  }
-  else{
-    for(gene in recon3DModel_genes$entrez){
-      rnaseq_score = final_gene_calls$calls_per_omics$Transcriptomics[as.character(gene),'RNAseq']
-      microarray_score = final_gene_calls$calls_per_omics$Transcriptomics[as.character(gene),'Microarray']
-      
-      if(is.na(rnaseq_score)&is.na(microarray_score)) gene_score = 0 # If no data on gene
-      else if(sum(is.na(c(rnaseq_score, microarray_score)))==1){ # If one of the transcriptomics does not have data for the gene
-        if(na.omit(c(rnaseq_score, microarray_score))>=0.8) gene_score = 2
-        if(na.omit(c(rnaseq_score, microarray_score))<=0.5) gene_score = 0
-        else gene_score = 1
-      }
-      else{
-        if(rnaseq_score>=0.75 & microarray_score>=0.75) gene_score = 2
-        else if (mean(c(rnaseq_score, microarray_score))<=0.5) gene_score = 0
-        else gene_score = 1
-      }
-      final_calls = c(final_calls, gene_score)
-    }
-    final_gene_calls$final_gene_calls = data.frame(Transcriptomics=final_gene_calls$calls_per_omics$Transcriptomics[,'Transcriptomics'],
-                                                   Final=final_calls,
-                                                   row.names=recon3DModel_genes$entrez)
-  }
-  
-  return(final_gene_calls)
-}
-
-
-
-
 
 
 
