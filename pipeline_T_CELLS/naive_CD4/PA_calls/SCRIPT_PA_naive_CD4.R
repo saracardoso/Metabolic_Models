@@ -1,15 +1,16 @@
 #Directories:
-base_dir = '~/Documents/PhD'
+base_dir = getwd() # When oppening with ptoject
+Omics_data_Repos = 'home/scardoso/Documents/PhD/Omics_Data_Repos'
 
-Metabolic_Models_Repo = paste(base_dir, 'Metabolic_Models', sep='/')
-Metabolic_Models_Repo_general = paste(Metabolic_Models_Repo, 'general', sep='/')
-Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general, 'utils', sep='/')
-Metabolic_Models_Repo_general_R = paste(Metabolic_Models_Repo_general, 'R', sep='/')
-Metabolic_Models_Repo_reconstruction_process_T_CELLS = paste(Metabolic_Models_Repo, 'reconstruction_process_T_CELLS', sep='/')
+Metabolic_Models_Repo_general_code = paste(base_dir, 'general_code', sep='/')
+Metabolic_Models_Repo_general_code_utils = paste(Metabolic_Models_Repo_general_code, 'utils', sep='/')
+Metabolic_Models_Repo_general_code_R = paste(Metabolic_Models_Repo_general_code, 'R', sep='/')
+
+Metabolic_Models_Repo_reconstruction_process_T_CELLS = paste(base_dir, 'reconstruction_process_T_CELLS', sep='/')
 Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4 = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS, 'naive_CD4', sep='/')
 Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4_PA_calls = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4, 'PA_calls', sep='/')
 
-T_Cell_Data_Repo = paste(base_dir, 'T_Cell_Data_Repo', sep='/')
+T_Cell_Data_Repo = paste(Omics_data_Repos, 'T_Cell_Data_Repo', sep='/')
 T_Cell_Data_Repo_Data_Files = paste(T_Cell_Data_Repo, 'Data_Files', sep='/')
 T_Cell_Data_Repo_Data_Files_naive_CD4 = paste(T_Cell_Data_Repo_Data_Files, 'naive_CD4', sep='/')
 T_Cell_Data_Repo_Data_Files_naive_CD4_RNA_seq = paste(T_Cell_Data_Repo_Data_Files_naive_CD4, 'RNA_seq', sep='/')
@@ -17,9 +18,10 @@ T_Cell_Data_Repo_Data_Files_naive_CD4_Microarray = paste(T_Cell_Data_Repo_Data_F
 T_Cell_Data_Repo_Data_Files_naive_CD4_Proteomics = paste(T_Cell_Data_Repo_Data_Files_naive_CD4, 'Proteomics', sep='/')
 
 #Files:
-PA_calls_file = paste(Metabolic_Models_Repo_general_R, 'PA_calls.R', sep='/')
-recon3DModel_genes_file = paste(Metabolic_Models_Repo_general_utils, 'recon3DModel_genes.csv', sep='/')
-recon3DModel_GPR_file = paste(Metabolic_Models_Repo_general_utils, 'recon3DModel_GPR.txt', sep='/')
+PA_calls_file = paste(Metabolic_Models_Repo_general_code_R, 'PA_calls.R', sep='/')
+recon3D_consistent_genes_file = paste(Metabolic_Models_Repo_general_code_utils, 'entrez_genes/recon3D_consistent_genes.txt', sep='/')
+recon3D_consistent_GPR_file = paste(Metabolic_Models_Repo_general_code_utils, 'GPRs/recon3D_consistent_GPR.txt', sep='/')
+recon3DModel_gene_mapping_file = paste(Metabolic_Models_Repo_general_code_utils, 'recon3DModel_gene_mapping.csv', sep='/')
 
 naive_CD4_microarray_data_file = paste(T_Cell_Data_Repo_Data_Files_naive_CD4_Microarray, 'naive_CD4_microarray_data.csv', sep='/')
 naive_CD4_rnaseq_data_file = paste(T_Cell_Data_Repo_Data_Files_naive_CD4_RNA_seq, 'naive_CD4_rnaseq_data.csv', sep='/')
@@ -27,58 +29,34 @@ naive_CD4_proteomics_data_file = paste(T_Cell_Data_Repo_Data_Files_naive_CD4_Pro
 naive_CD4_microarray_metadata_file = paste(T_Cell_Data_Repo_Data_Files_naive_CD4_Microarray, 'naive_CD4_microarray_metadata.csv', sep='/')
 naive_CD4_rnaseq_metadata_file = paste(T_Cell_Data_Repo_Data_Files_naive_CD4_RNA_seq, 'naive_CD4_rnaseq_metadata.csv', sep='/')
 
-naive_CD4_gene_calls_RNAseq_new_file = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4_PA_calls, 'naive_CD4_gene_calls_RNAseq.csv', sep='/')
-naive_CD4_gene_calls_Microarray_new_file = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4_PA_calls, 'naive_CD4_gene_calls_Microarray.csv', sep='/')
-naive_CD4_gene_calls_proteomics_ImmProt_new_file = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4_PA_calls, 'naive_CD4_gene_calls_Proteomics_ImmProt.csv', sep='/')
-naive_CD4_final_gene_calls_new_file = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4_PA_calls, 'naive_CD4_final_gene_calls.csv', sep='/')
-naive_CD4_reaction_calls = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_naive_CD4_PA_calls, 'naive_CD4_reaction_calls.csv', sep='/')
-
-
 #Source:
 source(PA_calls_file)
-recon3DModel_genes = read.csv(recon3DModel_genes_file, stringsAsFactors = F)
-recon3D_gpr_rules = read.table(recon3DModel_GPR_file, sep='\t', stringsAsFactors = F)
-recon3D_gpr_rules_filtered = recon3D_gpr_rules[!recon3D_gpr_rules[,2]=='',] #Remove reactions without GPRs
-recon3D_gpr_rules_filtered[,2] = gsub('[.][1-9]+', '',recon3D_gpr_rules_filtered[,2]) #Remove 'version' .1, .2, ...
-
-
-
 
 
 #--- Read expression data for PA calls ---
 
-naive_CD4_expression_data = prepare_data_pa_calls(transcriptomics_data_files = list(RNAseq=naive_CD4_rnaseq_data_file, Microarray=naive_CD4_microarray_data_file),
-                                                  transcriptomics_metadata_files = list(RNAseq=naive_CD4_rnaseq_metadata_file, Microarray=naive_CD4_microarray_metadata_file),
-                                                  proteomics_data_files = list(ImmProt=naive_CD4_proteomics_data_file),
-                                                  proteomics_metadata_files = NULL)
+recon3D_consistent_genes = as.character(read.table(recon3D_consistent_genes_file)[,1])
+
+naive_CD4_expression_data = read_omics_data(recon3D_consistent_genes, recon3DModel_gene_mapping_file,
+                                            transcriptomics_data_files = list(RNAseq=naive_CD4_rnaseq_data_file, Microarray=naive_CD4_microarray_data_file),
+                                            transcriptomics_metadata_files = list(RNAseq=naive_CD4_rnaseq_metadata_file, Microarray=naive_CD4_microarray_metadata_file),
+                                            proteomics_data_files = list(ImmProt=naive_CD4_proteomics_data_file),
+                                            proteomics_metadata_files = NULL)
 
 
-#--- Gene Calls ---
-
-naive_CD4_transcriptomics_PA_calls = transcriptomics_PA_calls(naive_CD4_expression_data$Transcriptomics)
-View(naive_CD4_transcriptomics_PA_calls$calls_per_omics)
-View(naive_CD4_transcriptomics_PA_calls$calls_per_sample$RNAseq)
-View(naive_CD4_transcriptomics_PA_calls$calls_per_sample$Microarray)
-
-naive_CD4_proteomics_PA_calls = proteomics_PA_calls(naive_CD4_expression_data$Proteomics)
-View(naive_CD4_proteomics_PA_calls$calls_per_omics)
-View(naive_CD4_proteomics_PA_calls$calls_per_sample$ImmProt)
-
-naive_CD4_gene_PA_calls = final_gene_PA_calls(naive_CD4_transcriptomics_PA_calls, naive_CD4_proteomics_PA_calls)
-View(naive_CD4_gene_PA_calls$final_gene_calls)
-
-write.csv(naive_CD4_transcriptomics_PA_calls$calls_per_sample$RNAseq, naive_CD4_gene_calls_RNAseq_new_file)
-write.csv(naive_CD4_transcriptomics_PA_calls$calls_per_sample$Microarray, naive_CD4_gene_calls_Microarray_new_file)
-write.csv(naive_CD4_proteomics_PA_calls$calls_per_sample$ImmProt, naive_CD4_gene_calls_proteomics_ImmProt_new_file)
-write.csv(naive_CD4_gene_PA_calls$final_gene_calls, naive_CD4_final_gene_calls_new_file)
+#--- Reaction Calls ---
 
 
-#-- Reaction Calls --
 
-naive_CD4_PA_reactions = PA_reaction_calls(naive_CD4_gene_PA_calls$final_gene_calls)
-View(naive_CD4_PA_reactions)
 
-write.table(naive_CD4_PA_reactions, naive_CD4_reaction_calls, sep=',', col.names=F)
+
+
+
+
+
+
+
+
 
 
 #-- Analysis of PA Calls --

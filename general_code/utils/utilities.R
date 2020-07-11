@@ -1,5 +1,5 @@
 #Directories:
-base_dir = getwd()
+base_dir = getwd() # Open through project file
 
 Omics_data_Repos = 'home/scardoso/Documents/PhD/Omics_Data_Repos'
 T_Cell_Data_Repo = paste(Omics_data_Repos, 'T_Cell_Data_Repo', sep='/')
@@ -9,6 +9,7 @@ T_Cell_Data_Repo_Process_Scripts_utils = paste(T_Cell_Data_Repo_Process_Scripts,
 Metabolic_Models_Repo_general_code = paste(base_dir, 'general_code', sep='/')
 Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general_code, 'utils', sep='/')
 Metabolic_Models_Repo_general_utils_entrez_genes = paste(Metabolic_Models_Repo_general_utils, 'entrez_genes', sep='/')
+Metabolic_Models_Repo_general_utils_GPRs = paste(Metabolic_Models_Repo_general_utils, 'GPRs', sep='/')
 
 #Files:
 genes_lengths_GRCh38p13_file = paste(T_Cell_Data_Repo_Process_Scripts_utils, 'genes_lengths_GRCh38p13.txt', sep='/')
@@ -20,7 +21,8 @@ recon3DModel_301_gene_mapping_new_file = paste(Metabolic_Models_Repo_general_uti
 
 recon3DModel_301_consistent_genes_file = paste(Metabolic_Models_Repo_general_utils_entrez_genes, 'recon3D_consistent_genes.txt', sep='/')
 
-
+recon3D_GPR_file = paste(Metabolic_Models_Repo_general_utils_GPRs, 'recon3D_GPR.txt', sep='/')
+recon3D_consistent_GPR_file = paste(Metabolic_Models_Repo_general_utils_GPRs, 'recon3D_consistent_GPR.txt', sep='/')
 
 ########################################
 ###MAP RECON3D GENES TO ENSEMBL GENES###
@@ -81,6 +83,9 @@ View(recon3DModel_genes)
 write.csv(recon3DModel_genes, recon3DModel_301_gene_mapping_new_file, row.names=F)
 
 
+
+
+
 #########################
 ##Get unique entrez ids##
 #########################
@@ -93,3 +98,28 @@ recon3dmodel_gene_ids = as.character(read.table(recon3DModel_301_genes_file)$V1)
 recon3dmodel_gene_ids_unique = c()
 for (x in strsplit(recon3dmodel_gene_ids, '[_]')) recon3dmodel_gene_ids_unique = unique(c(recon3dmodel_gene_ids_unique, x[1]))
 write.table(recon3dmodel_gene_ids_unique, recon3DModel_301_genes_file, row.names=F, col.names=F)
+
+
+
+
+
+################################
+##Get GPRs without transcripts##
+################################
+
+# Recon3D:
+recon3D_GPRs = read.table(recon3D_GPR_file, sep='\t')
+for(gpr in 1:length(recon3D_GPRs$V2))
+  recon3D_GPRs$V2[gpr] = paste(strsplit(recon3D_GPRs$V2[gpr], '_AT[1-9]+')[[1]], collapse='')
+write.table(recon3D_GPRs, recon3D_GPR_file, row.names=F, col.names=F)
+
+# Recon3D_consistent:
+recon3D_consistent_GPRs = read.table(recon3D_consistent_GPR_file, sep='\t')
+for(gpr in 1:length(recon3D_consistent_GPRs$V2))
+  recon3D_consistent_GPRs$V2[gpr] = paste(strsplit(recon3D_consistent_GPRs$V2[gpr], '_AT[1-9]+')[[1]], collapse='')
+write.table(recon3D_consistent_GPRs, recon3D_consistent_GPR_file, row.names=F, col.names=F)
+
+
+
+
+

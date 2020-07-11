@@ -1,12 +1,3 @@
-#Directories:
-base_dir = '~/Documents/PhD'
-
-Metabolic_Models_Repo = paste(base_dir, 'Metabolic_Models', sep='/')
-Metabolic_Models_Repo_general_code = paste(Metabolic_Models_Repo, 'general_code', sep='/')
-Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general_code, 'utils', sep='/')
-
-
-
 
 ###################
 ##READ OMICS DATA##
@@ -14,7 +5,7 @@ Metabolic_Models_Repo_general_utils = paste(Metabolic_Models_Repo_general_code, 
 
 #ensembl_genes    -->   vector with the ensembl gene ids to consider. Must correspond to those that are present in the
 #                       generic model that will be used for reconstruction
-read_omics_data = function(ensembl_genes,
+read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_sep=',', map_file_header=TRUE,
                            transcriptomics_data_files = list(RNAseq=NULL, Microarray=NULL),
                            transcriptomics_metadata_files = list(RNAseq=NULL, Microarray=NULL),
                            proteomics_data_files = list(dataset_name=NULL),
@@ -23,6 +14,15 @@ read_omics_data = function(ensembl_genes,
     stop("Please give a file path to the RNAseq data (transcriptomics_data_files$RNAseq) and/or
          a file path to the Microarray data (transcriptomics_data_files$Microarray)")
   
+  # Get gene mapping: entrez (mandatory) - ensembl (mandatory) - symbol (optional)
+  gene_mapping = read.csv(gene_mapping_file, sep=map_file_sep, header=map_file_header)
+  if(length(entrez_genes_universe) > dim(gene_mapping)[1])
+    stop('Too many genes given.')
+  if(sum(is.na(match(entrez_genes_universe, gene_mapping$entrez)))>0)
+    stop('One or more of the genes given are not present in the map_file given.')
+  ensembl_genes = gene_mapping$ensembl[match(entrez_genes_universe, gene_mapping$entrez)]
+  
+  # Data will be stored here:
   expression_data = list()
   expression_data$Transcriptomics = list()
   expression_data$Proteomics = list()
@@ -35,7 +35,7 @@ read_omics_data = function(ensembl_genes,
                                                                      sep=''))
     expression_data$Transcriptomics[[transcriptomics_type]] = list()
     data_df = read.csv(transcriptomics_data_files[[transcriptomics_type]], row.names=1)
-    if(transcriptomics_type=='RNAseq') expression_data$Transcriptomics[[transcriptomics_type]]$data = data_df[ensembl_genes,]
+    if(transcriptomics_type=='RNAseq') expression_data$Transcriptomics[[transcriptomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
     else expression_data$Transcriptomics[[transcriptomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
     if(is.null(transcriptomics_metadata_files[[transcriptomics_type]])) warning(paste('Transcriptomics type (',
                                                                                       transcriptomics_type,
@@ -75,16 +75,21 @@ read_omics_data = function(ensembl_genes,
 
 #-- MAIN FUNCTION
 
-PA_reaction_calls = function(omics_data, or = 'MAX',
-                             gene_mapping_file, map_file_sep=',', map_file_header=TRUE,
-                             gpr_file, gpr_file_sep='\t', gpr_file_header=FALSE){
+PA_reaction_calls = function(omics_data, or = 'MAX', gene_mapping_file, gpr_file, entrez_genes_universe,
+                             map_file_sep=',', map_file_header=TRUE,
+                             gpr_file_sep='\t', gpr_file_header=FALSE){
   
   # Get GPR rules for reactions in the generic model:
-  gpr_rules = read.csv(gpr_rules_file, sep=gpr_file_sep, header=gpr_file_header)
-  gpr_rules[,2] = gsub('[.][1-9]+', '',gpr_rules[,2]) #Remove 'version' .1, .2, ...
+  gpr_rules = read.table(gpr_rules_file, sep=gpr_file_sep, header=gpr_file_header)
+  #gpr_rules[,2] = gsub('[.][1-9]+', '',gpr_rules[,2]) #Remove 'version' .1, .2, ...
   
   # Get gene mapping: entrez (mandatory) - ensembl (mandatory) - symbol (optional)
   gene_mapping = read.csv(gene_mapping_file, sep=map_file_sep, header=map_file_header)
+  if(length(entrez_genes_universe) > dim(gene_mapping)[1])
+    stop('Too many genes given.')
+  if(sum(is.na(match(entrez_genes_universe, gene_mapping$entrez)))>0)
+    stop('One or more of the genes given are not present in the map_file given.')
+  gene_mapping = gene_mapping[match(entrez_genes_universe, gene_mapping$entrez),]
   
   # Gene calls:
   if(is.null(omics_data$Proteomics)){
@@ -403,8 +408,8 @@ PA_from_gene_to_reaction_calls = function(gene_calls, gpr_rules, or = 'MAX'){
   reaction_calls = c()
   for(reaction in 1:dim(gpr_rules)[1]){
     gpr_str = gpr_rules[reaction,2]
-    gpr_str = gsub('[(]','',gpr_str) #Remove (), they won't be necessary.
-    gpr_str = gsub('[)]','',gpr_str)
+    gpr_str = gsub('[(] ','',gpr_str) #Remove (), they won't be necessary.
+    gpr_str = gsub(' [)]','',gpr_str)
     splitted_ors = strsplit(gpr_str,' or ')[[1]] #Split into different elements through or
     if(length(splitted_ors)==0) reaction_calls = c(reaction_calls, NA) # Reaction with no gene associated
     else{
@@ -455,13 +460,13 @@ PA_algorithms_reaction_calls = function(reaction_calls){
   # Calculate Reaction Scores for each algorithm:
   for(reaction in reaction_ids){
     if(!is.na(reaction_calls[reaction])){
-      if(reaction_calls[reaction] = 3)
+      if(reaction_calls[reaction] == 3)
         reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 20)
-      else if(reaction_calls[reaction] = 2)
+      else if(reaction_calls[reaction] == 2)
         reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 15)
-      else if(reaction_calls[reaction] = 1)
+      else if(reaction_calls[reaction] == 1)
         reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 1, 1, 'Medium', 10)
-      else if(reaction_calls[reaction] = 0)
+      else if(reaction_calls[reaction] == 0)
         reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('-', 0, 0, 'Negative', -8)
     }
   }
