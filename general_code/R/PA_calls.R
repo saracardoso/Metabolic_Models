@@ -25,7 +25,7 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
   # Data will be stored here:
   expression_data = list()
   expression_data$Transcriptomics = list()
-  expression_data$Proteomics = list()
+  if(!is.null(proteomics_data_files) | !is.null(proteomics_data_files$dataset_name)) expression_data$Proteomics = list()
   
   #Get transcriptomics data and maintain only genes in recond3DModel:
   for(transcriptomics_type in names(transcriptomics_data_files)){
@@ -35,8 +35,7 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
                                                                      sep=''))
     expression_data$Transcriptomics[[transcriptomics_type]] = list()
     data_df = read.csv(transcriptomics_data_files[[transcriptomics_type]], row.names=1)
-    if(transcriptomics_type=='RNAseq') expression_data$Transcriptomics[[transcriptomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
-    else expression_data$Transcriptomics[[transcriptomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
+    expression_data$Transcriptomics[[transcriptomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
     if(is.null(transcriptomics_metadata_files[[transcriptomics_type]])) warning(paste('Transcriptomics type (',
                                                                                       transcriptomics_type,
                                                                                       ') does not have a corresponding metadata file path under same name',
@@ -46,20 +45,22 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
   }
   
   #Get proteomics data and maintain only genes in recond3DModel:
-  for(proteomics_type in names(proteomics_data_files)){
-    #if(!proteomics_type%in%c('protein_copy_numbers', 'protein_concentration')) stop(paste('Invalid proteomics type (',
-    #                                                                                      proteomics_type,
-    #                                                                                      '). Valid types: protein_copy_numbers and protein_concentration',
-    #                                                                                      sep=''))
-    expression_data$Proteomics[[proteomics_type]] = list()
-    data_df = read.csv(proteomics_data_files[[proteomics_type]], row.names=1)
-    expression_data$Proteomics[[proteomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
-    if(is.null(transcriptomics_metadata_files[[proteomics_type]])) warning(paste('Proteomics data (',
-                                                                                 proteomics_type,
-                                                                                 ') does not have a corresponding metadata file path under same name',
-                                                                                 sep=''))
-    else expression_data$Proteomics[[proteomics_type]]$metadata = read.csv(transcriptomics_metadata_files[[proteomics_type]],
-                                                                           row.names = 1)
+  if(!is.null(proteomics_data_files) | !is.null(proteomics_data_files$dataset_name)){
+    for(proteomics_type in names(proteomics_data_files)){
+      #if(!proteomics_type%in%c('protein_copy_numbers', 'protein_concentration')) stop(paste('Invalid proteomics type (',
+      #                                                                                      proteomics_type,
+      #                                                                                      '). Valid types: protein_copy_numbers and protein_concentration',
+      #                                                                                      sep=''))
+      expression_data$Proteomics[[proteomics_type]] = list()
+      data_df = read.csv(proteomics_data_files[[proteomics_type]], row.names=1)
+      expression_data$Proteomics[[proteomics_type]]$data = data_df[na.omit(match(ensembl_genes, rownames(data_df))),]
+      if(is.null(transcriptomics_metadata_files[[proteomics_type]])) warning(paste('Proteomics data (',
+                                                                                   proteomics_type,
+                                                                                   ') does not have a corresponding metadata file path under same name',
+                                                                                   sep=''))
+      else expression_data$Proteomics[[proteomics_type]]$metadata = read.csv(transcriptomics_metadata_files[[proteomics_type]],
+                                                                             row.names = 1)
+    }
   }
   
   return(expression_data)
@@ -75,12 +76,13 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
 
 #-- MAIN FUNCTION
 
-PA_reaction_calls = function(omics_data, or = 'MAX', gene_mapping_file, gpr_file, entrez_genes_universe,
+PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_genes_universe,
+                             or = 'MAX',
                              map_file_sep=',', map_file_header=TRUE,
-                             gpr_file_sep='\t', gpr_file_header=FALSE){
+                             gpr_file_sep=' ', gpr_file_header=FALSE){
   
   # Get GPR rules for reactions in the generic model:
-  gpr_rules = read.table(gpr_rules_file, sep=gpr_file_sep, header=gpr_file_header)
+  gpr_rules = read.table(gpr_file, sep=gpr_file_sep, header=gpr_file_header)
   #gpr_rules[,2] = gsub('[.][1-9]+', '',gpr_rules[,2]) #Remove 'version' .1, .2, ...
   
   # Get gene mapping: entrez (mandatory) - ensembl (mandatory) - symbol (optional)
@@ -94,29 +96,40 @@ PA_reaction_calls = function(omics_data, or = 'MAX', gene_mapping_file, gpr_file
   # Gene calls:
   if(is.null(omics_data$Proteomics)){
     #Transcriptomics calls:
-    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Trancriptomics, gene_mapping, only_trans=T)
+    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Transcriptomics, gene_mapping, only_trans=T)
     #Get named vector:
-    transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics$Transcriptomics
+    transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics[,'Transcriptomics']
     names(transcriptomics_gene_calls) = rownames(transcriptomics_calls$calls_per_omics)
     #Get final gene calls:
     gene_calls = PA_gene_calls(transcriptomics_gene_calls)
   }
   else{
     #Transcriptomics calls:
-    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Trancriptomics, gene_mapping, only_trans=F)
+    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Transcriptomics, gene_mapping, only_trans=F)
     #Get named vector:
-    transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics$Transcriptomics
+    transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics[,'Transcriptomics']
     names(transcriptomics_gene_calls) = rownames(transcriptomics_calls$calls_per_omics)
     #Get transcriptomics presence:
-    transcriptomics_presence = rowMeans(transcriptomics_calls$calls_per_omis[,-dim(transcriptomics_calls$calls_per_omis)[2]])
+    transcriptomics_presence = c()
+    for(gene in rownames(transcriptomics_calls$calls_per_omics))
+      transcriptomics_presence = c(transcriptomics_presence,
+                                   mean(na.omit(as.numeric(transcriptomics_calls$calls_per_omics[gene,1:(dim(transcriptomics_calls$calls_per_omics)[2]-1)]))))
+    names(transcriptomics_presence) = rownames(transcriptomics_calls$calls_per_omics)
     
     #Proteomics calls:
     proteomics_calls = PA_proteomics_calls(omics_data$Proteomics, gene_mapping)
     #Get named vector:
-    proteomics_gene_calls = proteomics_calls$calls_per_omics$Proteomics
+    proteomics_gene_calls = proteomics_calls$calls_per_omics[,'Proteomics']
     names(proteomics_gene_calls) = rownames(proteomics_calls$calls_per_omics)
     #Get proteomics presence:
-    proteomics_presence = rowMeans(proteomics_calls$calls_per_omis[,-dim(proteomics_calls$calls_per_omis)[2]])
+    if(dim(proteomics_calls$calls_per_omics)[2]==2) # Only one proteomics dataset
+      proteomics_presence = proteomics_calls$calls_per_omics[,1]
+    else{ # More than one proteomics dataset
+      proteomics_presence = c()
+      for(gene in rownames(proteomics_calls$calls_per_omics))
+        proteomics_presence = c(proteomics_presence,
+                                mean(na.omit(as.numeric(proteomics_calls$calls_per_omics[gene,1:(dim(proteomics_calls$calls_per_omics)[2]-1)]))))
+    }
     
     #Get final gene calls:
     gene_calls = PA_gene_calls(transcriptomics_gene_calls, transcriptomics_presence=transcriptomics_presence,
@@ -231,7 +244,7 @@ PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_tra
     for (gene in 1:dim(final_gene_calls)[1]){ #For each gene
       if(sum(!is.na(final_gene_calls[gene,c('RNAseq','Microarray')]))==2){ #If there are PA calls from both data types
         sum_gene = sum(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')])) #Summ the scores of both types
-        average_gene = mean(rna_microarray_gene)  #Average the score
+        average_gene = mean(as.numeric(final_gene_calls[gene,c('RNAseq','Microarray')]))  #Average the score
         if(average_gene<=0.5) final_gene_calls[gene, 'Transcriptomics'] = 0 #If average smaller than 0.5, score 0
         else if(sum_gene>=1.5) final_gene_calls[gene, 'Transcriptomics'] = 3 #If both types greater than 0.75,
                                                                             #score 3
@@ -376,9 +389,9 @@ PA_gene_calls = function(transcriptomics_gene_calls, transcriptomics_presence=NU
         if(scores_sum == 4) final_gene_scores = c(final_gene_scores, 3)
         else if(scores_sum == 3) final_gene_scores = c(final_gene_scores, 2)
         else if(scores_sum <= 1) final_gene_scores = c(final_gene_scores, 0)
-        else if(both_scores == c(1,1)) final_gene_scores = c(final_gene_scores, 1)
+        else if(sum(both_scores == c(1,1))==2) final_gene_scores = c(final_gene_scores, 1)
         else{ #When one of the omics is 2 and the other 0
-          samps_presence = c(transcriptomics_presence[gene], proteomics_presence[gene])[both_scores!=0]
+          samps_presence = c(transcriptomics_presence[gene], proteomics_presence[gene])[both_scores==0]
           if(samps_presence==0) final_gene_scores = c(final_gene_scores, 0)
           else final_gene_scores = c(final_gene_scores, 1)
         }
@@ -393,7 +406,7 @@ PA_gene_calls = function(transcriptomics_gene_calls, transcriptomics_presence=NU
   else final_gene_scores = transcriptomics_gene_calls
   
   names(final_gene_scores) = names(transcriptomics_gene_calls)
-  return(transcriptomics_gene_calls)
+  return(final_gene_scores)
 }
 
 
@@ -449,7 +462,7 @@ PA_algorithms_reaction_calls = function(reaction_calls){
   algos = c('FastCore','GIMME','IMAT','CORDA','tINIT')
   
   #Initiate data.frame where results will be stored:
-  reaction_calls = data.frame(original=reaction_calls,
+  algo_reaction_calls = data.frame(original=reaction_calls,
                               FastCore=rep('-', length(reaction_ids)),
                               GIMME=rep(-1, length(reaction_ids)),
                               IMAT=rep(-1, length(reaction_ids)),
@@ -461,18 +474,34 @@ PA_algorithms_reaction_calls = function(reaction_calls){
   for(reaction in reaction_ids){
     if(!is.na(reaction_calls[reaction])){
       if(reaction_calls[reaction] == 3)
-        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 20)
+        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 20)
       else if(reaction_calls[reaction] == 2)
-        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 15)
+        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 15)
       else if(reaction_calls[reaction] == 1)
-        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 1, 1, 'Medium', 10)
+        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 1, 1, 'Medium', 10)
       else if(reaction_calls[reaction] == 0)
-        reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('-', 0, 0, 'Negative', -8)
+        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('-', 0, 0, 'Negative', -8)
     }
   }
   
-  return(reaction_calls)
+  return(algo_reaction_calls)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

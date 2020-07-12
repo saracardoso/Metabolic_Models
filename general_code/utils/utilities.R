@@ -111,13 +111,13 @@ write.table(recon3dmodel_gene_ids_unique, recon3DModel_301_genes_file, row.names
 recon3D_GPRs = read.table(recon3D_GPR_file, sep='\t')
 for(gpr in 1:length(recon3D_GPRs$V2))
   recon3D_GPRs$V2[gpr] = paste(strsplit(recon3D_GPRs$V2[gpr], '_AT[1-9]+')[[1]], collapse='')
-write.table(recon3D_GPRs, recon3D_GPR_file, row.names=F, col.names=F)
+write.csv(recon3D_GPRs, recon3D_GPR_file, row.names=F, col.names=F)
 
 # Recon3D_consistent:
 recon3D_consistent_GPRs = read.table(recon3D_consistent_GPR_file, sep='\t')
 for(gpr in 1:length(recon3D_consistent_GPRs$V2))
   recon3D_consistent_GPRs$V2[gpr] = paste(strsplit(recon3D_consistent_GPRs$V2[gpr], '_AT[1-9]+')[[1]], collapse='')
-write.table(recon3D_consistent_GPRs, recon3D_consistent_GPR_file, row.names=F, col.names=F)
+write.csv(recon3D_consistent_GPRs, recon3D_consistent_GPR_file, row.names=F, col.names=F)
 
 
 
