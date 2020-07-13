@@ -3,8 +3,38 @@
 ##READ OMICS DATA##
 ###################
 
-#ensembl_genes    -->   vector with the ensembl gene ids to consider. Must correspond to those that are present in the
-#                       generic model that will be used for reconstruction
+#--
+#-read_omics_data
+#--
+#-> Arguments:
+# entrez_genes_universe           -->   vector with the entrez gene ids to consider. Must correspond to those that are present
+#                                       in the generic model that will be used for reconstruction
+# gene_mapping_file               -->   string with the path to the file that contains the differents IDs for at least the genes
+#                                       in the generic model. File with 3 columns: entrez, ensembl and symbol
+# map_file_sep                    -->   string with character that separates the different cells in the file gene_mapping_file
+# map_file_header                 -->   boolean value indicating whether the gene_mapping_file contains a row as header or not
+# transcriptomics_data_files      -->   list with two items: RNAseq (string with the path to the RNAseq data file) and
+#                                       Microarray (string with the path to the Microarray data file)
+# transcriptomics_metadata_files  -->   (optional) list with two items: RNAseq (string with the path to the RNAseq metadata
+#                                       file) and Microarray (string with the path to the Microarray metadata file)
+# proteomics_data_files           -->   (optional) list with one or more items: each item (named after the dataset's name)
+#                                       contains a string with the path to dataset's data file
+# proteomics_metadata_files       -->   (optional) list with two items: each item (named after the dataset's name) contains
+#                                       a string with the path to dataset's metadata file
+#-> Value:
+#List with the following structure:
+#   -dataset$
+#        -Transcriptomics$
+#                 -RNAseq$ [if available]
+#                     -data
+#                     -metadata [if available]
+#                 -Microarray$ [if available]
+#                     -data
+#                     -metadata [if available]
+#        -Proteomics$
+#                 -<dataset_name>$ [if available]
+#                     -data
+#                     -metadata [if available]
 read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_sep=',', map_file_header=TRUE,
                            transcriptomics_data_files = list(RNAseq=NULL, Microarray=NULL),
                            transcriptomics_metadata_files = list(RNAseq=NULL, Microarray=NULL),
@@ -76,6 +106,34 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
 
 #-- MAIN FUNCTION
 
+#--
+#-PA_reaction_calls
+#--
+#-> Arguments:
+# omics_data                      -->   dataset retrieved from function read_omics_data
+# gene_mapping_file               -->   string with the path to the file that contains the differents IDs for at least the genes
+#                                       in the generic model. File with 3 columns: entrez, ensembl and symbol
+# gpr_file                        -->   string with the path to the file that contains the GPR rules to the reactions
+#                                       from the generic model. File with two columns: reaction IDs and GPR rules in the
+#                                       form of: ( geneA and geneB ) or ( geneC and geneD ), for example.
+# entrez_genes_universe           -->   vector with the entrez gene ids to consider. Must correspond to those that are present
+#                                       in the generic model that will be used for reconstruction
+# map_file_sep, gpr_file_sep      -->   string with character that separates the different cells in the files
+#                                       gene_mapping_file and gpr_file, respectively
+# map_file_header,gpr_file_header -->   boolean value indicating whether the gene_mapping_file and gpr_file, respectively,
+#                                       contain a row as header or not
+# or                              -->   function to use regarding the OR rule. Either 'MAX' or 'SUM'. Defaults to 'MAX'.
+#-> Value:
+#List with the following structure:
+#   -dataset$
+#        -calls_per_sample$
+#                 -Transcriptomics$
+#                     -RNAseq [if available]
+#                     -Microarray [if available]
+#                 -Proteomics$ [if available]
+#                     -<dataset_name>
+#        -gene_scores
+#        -reaction_calls
 PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_genes_universe,
                              or = 'MAX',
                              map_file_sep=',', map_file_header=TRUE,
@@ -162,8 +220,6 @@ PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_gen
 
 #---GENE PA CALLS: TRANSCRIPTOMICS
 
-#gene_mapping   -->   data.frame with columns 'ensembl', 'entrez' and 'symbol'. Corresponds to the genes that are present
-#                     in the model to be used as generic model in the reconstruction
 PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_trans=T){
   
   #PA calls will be stored in this dataset:
@@ -270,8 +326,6 @@ PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_tra
 
 #---GENE PA CALLS: PROTEOMICS
 
-#gene_mapping   -->   data.frame with columns 'ensembl', 'entrez' and 'symbol'. Corresponds to the genes that are present
-#                     in the model to be used as generic model in the reconstruction
 PA_proteomics_calls = function(proteomics_data, gene_mapping){
   
   #PA calls will be stored in this dataset:
@@ -451,7 +505,7 @@ PA_from_gene_to_reaction_calls = function(gene_calls, gpr_rules, or = 'MAX'){
 }
 
 
-#-- FINAL GENE CALLS
+#-- FINAL REACTION CALLS
 
 PA_algorithms_reaction_calls = function(reaction_calls){
   
