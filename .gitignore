@@ -4,3 +4,5 @@ README.html
 venv/
 .idea/
 .Rhistory
+__pycache__/
+*.pyc
