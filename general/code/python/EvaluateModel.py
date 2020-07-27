@@ -20,6 +20,7 @@ class EvaluateModel(object):
 
         # Get the different media to consider:
         self.media = read_csv(join(getcwd(), 'general/utility_data/media.csv'), index_col='ID').to_dict()
+        self.media['Default'] = ''
         self.media_result = None
 
     def evaluate_tasks(self):
@@ -35,13 +36,15 @@ class EvaluateModel(object):
 
     def evaluate_media_biomass_capacity(self):
         reaction_ids = [i.id for i in self.model.reactions]
-        biomass_reactions = [i for i in reaction_ids if i.startswith('BIOMASS_')]
+        biomass_reactions = [i for i in reaction_ids if i.startswith('biomass_')]
 
-        res = DataFrame(np.zeros((len(self.media)+1, len(biomass_reactions))),
+        res = DataFrame(np.zeros((len(self.media), len(biomass_reactions))),
                         columns=biomass_reactions, index=self.media.keys())
         with self.model as model_to_test:
+            default_medium = model_to_test.medium.copy()
             for i_m, medium in enumerate(self.media.keys()):
-                model_to_test.medium = self.media[medium]
+                if medium == 'Default': model_to_test.medium = default_medium
+                else: model_to_test.medium = self.media[medium]
                 for i_r, biomass_reaction in enumerate(biomass_reactions):
                     model_to_test.objective = biomass_reaction
                     res.loc[i_m, i_r] = model_to_test.slim_optimize()
