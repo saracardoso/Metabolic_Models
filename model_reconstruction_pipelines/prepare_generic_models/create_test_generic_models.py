@@ -1,5 +1,7 @@
 from os.path import join
 from os import getcwd
+import numpy as np
+from pandas import read_csv, DataFrame
 
 from cobra.io import read_sbml_model, write_sbml_model
 from cobra.flux_analysis.variability import find_blocked_reactions
@@ -12,6 +14,8 @@ base_dir = getcwd()
 models_dir = join(base_dir, '0Models')
 HumanGEM_dir = join(models_dir, 'HumanGEM')
 
+utility_data_dir = join(base_dir, 'general/utility_data')
+
 
 '''
 HumanGEM_1.4
@@ -21,15 +25,25 @@ HumanGEM_1.4
 
 HumanGEM = read_sbml_model(join(HumanGEM_dir, 'HumanGEM_1.4.xml.gz'))
 
+
 # --- Evaluate Model ---
 
-evaluate_recon3d_forCancer = EvaluateModel(model=HumanGEM_forCancer)
+evaluate_HumanGEM = EvaluateModel(model=HumanGEM)
+# Blocked reactions:
+blocked_reactions = find_blocked_reactions(HumanGEM, open_exchanges=True)
+reactions_subsystems = read_csv(join(utility_data_dir, 'reactions_subsystems.csv'))
+blocked_reactions_subsystems = DataFrame(np.zeros((len(blocked_reactions), 2)),
+                                         columns=['Blocked Reaction', 'Subsystem'])
+for i, rxn in enumerate(blocked_reactions):
+    subsystem = reactions_subsystems.iloc[reactions_subsystems.iloc[:, 0].tolist().index(rxn), 1]
+    blocked_reactions_subsystems.iloc[i, :] = [rxn, subsystem]
 # Task evaluation:
-evaluate_recon3d_forCancer.evaluate_tasks()
+evaluate_HumanGEM.evaluate_tasks()
+evaluate_HumanGEM.tasks_result[0].to_csv(join(base_dir, 'model_reconstruction_pipelines/task_result.csv'))
 # Test capacity to carry flux over 'biomass_reaction' using different mediums
 # (recon3D medium,  Plasmax, Plasmax_v2, Plasmax_unconstrained, ):
 # Save into data.frame the medium used and the flux through the biomass reaction
-evaluate_recon3d_forCancer.evaluate_media_biomass_capacity()
+evaluate_HumanGEM.evaluate_media_biomass_capacity()
 
 '''
 HumanGEM_forCancer
@@ -67,7 +81,7 @@ HumanGEM_forTcells = HumanGEM.copy()
 # Add the biomass maintenance reaction from Recon3D:
 new_reaction_bm = Reaction(id='biomass_maintenance_Recon3D',
                            name='Biomass maintenance reaction from Recon3D',
-                           subsystem='Exchange/demand reaction',
+                           subsystem='Artificial reactions',
                            lower_bound=0., upper_bound=1000.)
 HumanGEM_forTcells.add_reactions([new_reaction_bm])
 HumanGEM_forTcells.reactions.biomass_maintenance_Recon3D.add_metabolites({
@@ -84,7 +98,7 @@ HumanGEM_forTcells.reactions.biomass_mac.gene_reaction_rule = ''
 # Add the biomass reaction from the macrophage model iAB-AM0-1410:
 new_reaction_mac = Reaction(id='biomass_macrophage_iABAM01410',
                             name='Biomass reaction from macrophage model iAB-AM0-1410',
-                            subsystem='Exchange/demand reaction',
+                            subsystem='Artificial reactions',
                             lower_bound=0., upper_bound=1000.)
 HumanGEM_forTcells.add_reactions([new_reaction_mac])
 HumanGEM_forTcells.reactions.biomass_macrophage_iABAM01410.add_metabolites({
