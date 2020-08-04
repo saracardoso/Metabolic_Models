@@ -1,5 +1,4 @@
 from os.path import join
-from os import getcwd
 from pandas import read_csv, DataFrame
 import numpy as np
 import warnings
@@ -10,13 +9,15 @@ from troppo.tasks.core import TaskEvaluator
 
 class EvaluateModel(object):
 
-    def __init__(self, model, media_file=None):
+    def __init__(self, model, tasks_file=None, media_file=None):
         self.model = model.copy()
 
         # Get the tasks to evaluate:
-        tasks_file = join(getcwd(), 'general/utility_data/metabolic_tasks_all_cells.json')
-        task_reader = JSONTaskIO()
-        self.tasks = task_reader.read_task(tasks_file)
+        if tasks_file is not None:
+            task_reader = JSONTaskIO()
+            self.tasks = task_reader.read_task(tasks_file)
+        else:
+            self.tasks = None
         self.tasks_result = None
 
         # Get the different media to consider:
@@ -26,15 +27,23 @@ class EvaluateModel(object):
             self.media = None
         self.media_result = None
 
+    def get_tasks_from_file(self, tasks_file):
+        task_reader = JSONTaskIO()
+        self.tasks = task_reader.read_task(tasks_file)
+
     def get_media_from_file(self, media_file):
         self.media = read_csv(media_file, index_col='ID').to_dict()
         self.media['Default'] = ''
 
     def evaluate_tasks(self):
-        tasks_descriptions = [i.annotations['description'] for i in self.tasks]
-        res_df = DataFrame(np.zeros((len(self.tasks), 2)),
-                           columns=['Observed', 'Expected'],
-                           index=tasks_descriptions)
+        if self.tasks is None:
+            warnings.warn('No tasks available.')
+            return
+
+        tasks_ids = [i.name for i in self.tasks]
+        res_df = DataFrame(np.zeros((len(self.tasks), 4)),
+                           columns=['Task_Name', 'Task_Group', 'Observed', 'Expected'],
+                           index=tasks_ids)
         res_dict = dict()
         with self.model as model_to_test:
             for boundary in model_to_test.boundary:
@@ -42,12 +51,21 @@ class EvaluateModel(object):
             task_evaluator = TaskEvaluator(model=model_to_test, tasks=self.tasks, solver='CPLEX')
             for i, task in enumerate(task_evaluator.tasks):
                 task_evaluator.current_task = task
-                task_description = self.tasks[i].annotations['description']
+                task_id = self.tasks[i].name
+                task_name = self.tasks[i].annotations['name']
+                task_group = self.tasks[i].annotations['task_group']
                 expected = not self.tasks[i].should_fail
 
                 sol = task_evaluator.evaluate()
-                res_df.loc[task_description] = [sol[0]] + [expected]
-                res_dict[task_description] = sol[1]
+                # sol gives True if should fail and failed, and if should not fail and did not fail
+                # sol will be changed so that everytime it works is True and everytime it fails is False:
+                if not expected:
+                    observed = not sol[0]
+                else:
+                    observed = sol[0]
+
+                res_df.loc[task_id] = [task_name] + [task_group] + [observed] + [expected]
+                res_dict[task_id] = sol[1].var_values()
         self.tasks_result = (res_df, res_dict)
 
     def evaluate_media_biomass_capacity(self):

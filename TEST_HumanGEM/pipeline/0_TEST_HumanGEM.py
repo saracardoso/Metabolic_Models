@@ -1,5 +1,4 @@
 from os.path import join
-from os import getcwd
 import numpy as np
 from pandas import read_csv, DataFrame
 
@@ -7,14 +6,14 @@ from cobra.io import read_sbml_model, write_sbml_model
 from cobra.flux_analysis.variability import find_blocked_reactions
 from cobra import Reaction
 
-from general.code.python.EvaluateModel import EvaluateModel
+from GENERAL.code.python.EvaluateModel import EvaluateModel
 
 # Base Directories:
-base_dir = getcwd()
-models_dir = join(base_dir, '0Models')
+base_dir = '/home/scardoso/Documents/PhD/Metabolic_Models'
+models_dir = join(base_dir, '0MODELS')
 HumanGEM_dir = join(models_dir, 'HumanGEM')
 
-utility_data_dir = join(base_dir, 'general/utility_data')
+utility_data_dir = join(base_dir, 'GENERAL/utility_data')
 
 
 '''
@@ -23,12 +22,14 @@ HumanGEM_1.4
 
 # --- Read HumanGEM original model ---
 
-HumanGEM = read_sbml_model(join(HumanGEM_dir, 'HumanGEM_1.4.xml.gz'))
+HumanGEM = read_sbml_model(join(HumanGEM_dir, 'HumanGEM-1.4.xml.gz'))
 
 
 # --- Evaluate Model ---
 
-evaluate_HumanGEM = EvaluateModel(model=HumanGEM)
+evaluate_HumanGEM = EvaluateModel(model=HumanGEM,
+                                  tasks_file=join(base_dir,
+                                                  'GENERAL/utility_data/metabolic_tasks_hsa_cellViability.json'))
 # Blocked reactions:
 blocked_reactions = find_blocked_reactions(HumanGEM, open_exchanges=True)
 reactions_subsystems = read_csv(join(utility_data_dir, 'reactions_subsystems.csv'))
@@ -39,10 +40,12 @@ for i, rxn in enumerate(blocked_reactions):
     blocked_reactions_subsystems.iloc[i, :] = [rxn, subsystem]
 # Task evaluation:
 evaluate_HumanGEM.evaluate_tasks()
-evaluate_HumanGEM.tasks_result[0].to_csv(join(base_dir, 'model_reconstruction_pipelines/task_result.csv'))
+evaluate_HumanGEM.tasks_result[0].to_csv(join(base_dir, 'TEST_HumanGEM/task_results_hsa_cellViability.csv'))
 # Test capacity to carry flux over 'biomass_reaction' using different mediums
 # (recon3D medium,  Plasmax, Plasmax_v2, Plasmax_unconstrained, ):
 # Save into data.frame the medium used and the flux through the biomass reaction
+evaluate_HumanGEM.get_media_from_file(join(base_dir,
+                                           'MODEL_RECONSTRUCTIONS/T_CELLS/general/utility_data/Tcell_media_fluxes.csv'))
 evaluate_HumanGEM.evaluate_media_biomass_capacity()
 
 '''
