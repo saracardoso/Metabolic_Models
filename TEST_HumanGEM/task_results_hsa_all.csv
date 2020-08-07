@@ -1,0 +1,294 @@
+,Task_Name,Task_Group,Observed,Expected
+T_SUCCESS_1,Aerobic Rephosphorylation of ATP from Glucose,Rephosphorylation of Nucleoside Triphosphates,True,True
+T_SUCCESS_2,Aerobic Rephosphorylation of GTP from Glucose,Rephosphorylation of Nucleoside Triphosphates,True,True
+T_SUCCESS_3,Aerobic Rephosphorylation of CTP from Glucose,Rephosphorylation of Nucleoside Triphosphates,True,True
+T_SUCCESS_4,Aerobic Rephosphorylation of UTP from Glucose,Rephosphorylation of Nucleoside Triphosphates,True,True
+T_SUCCESS_5,ATP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_6,CTP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_7,GTP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_8,UTP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_9,dATP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_10,dCTP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_11,dGTP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_12,dTTP de novo Synthesis,De novo Synthesis of Nucleotides,True,True
+T_SUCCESS_13,Histidine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_14,Isoleucine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_15,Leucine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_16,Lysine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_17,Methionine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_18,Phenylalanine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_19,Threonine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_20,Tryptophan Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_21,Valine Uptake,Uptake of Essential Amino acids,True,True
+T_SUCCESS_22,Glycerate 3-phosphate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_23,Mitochondrial acetyl-CoA de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_24,Mitochondrial AKG de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_25,Erythrose 4-phosphate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_26,Fructose 6-phosphate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_27,Glyceraldehyde 3-phosphate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_28,Glucose 6-phosphate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_29,Mitochondrial oxaloacetate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_30,Phosphoenolpyruvate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_31,Pyruvate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_32,Ribose 5-phosphate de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_33,Mitochondrial succinnyl-CoA de novo Synthesis,De novo Synthesis of Key Intermediates,True,True
+T_SUCCESS_34,Cholesterol de novo Synthesis,De novo Synthesis of Other Compounds,True,True
+T_SUCCESS_35,Protein Turnover,Protein Synthesis of Amino acids,True,True
+T_SUCCESS_36,Oxidative Phosphorylation,Electron Transport Chain and TCA,True,True
+T_SUCCESS_37,Oxidative Decarboxylation,Electron Transport Chain and TCA,True,True
+T_SUCCESS_38,Krebs Cycle NADH,Electron Transport Chain and TCA,True,True
+T_SUCCESS_39,Ubiquinol-to-proton,Electron Transport Chain and TCA,True,True
+T_SUCCESS_40,Ubiquinol-to-ATP,Electron Transport Chain and TCA,True,True
+T_SUCCESS_46,Uptake and Beta Oxidation of all NEFAs,Beta Oxidation of Fatty Acids,True,True
+T_SUCCESS_53,Thiamin Phosphorylation to TPP,Vitamins and co-factors,True,True
+T_SUCCESS_57,Aerobic rephosphorylation of ATP from a fatty acid,Rephosphorilation of Nucleoside Triphosphates,True,True
+T_SUCCESS_58,Anaerobic rephosphorylation of ATP,Rephosphorilation of Nucleoside Triphosphates,True,True
+T_SUCCESS_59,Anaerobic rephosphorylation of GTP,Rephosphorilation of Nucleoside Triphosphates,True,True
+T_SUCCESS_60,Anaerobic rephosphorylation of CTP,Rephosphorilation of Nucleoside Triphosphates,True,True
+T_SUCCESS_61,Anaerobic rephosphorylation of UTP,Rephosphorilation of Nucleoside Triphosphates,True,True
+T_SUCCESS_62,ATP salvage from Adenosine,Salvage of Nucleotides,True,True
+T_SUCCESS_63,ATP salvage from Hypoxanthine,Salvage of Nucleotides,True,True
+T_SUCCESS_64,dTTP salvage from Thymine,Salvage of Nucleotides,True,True
+T_SUCCESS_65,Aerobic reduction of NAD+,Aerobic Reductions,True,True
+T_SUCCESS_66,Aerobic reduction of NADP+,Aerobic Reductions,True,True
+T_SUCCESS_67,Gluconeogenesis from Lactate,Gluconeogenesis,True,True
+T_SUCCESS_68,Gluconeogenesis from Glycerol,Gluconeogenesis,True,True
+T_SUCCESS_69,Gluconeogenesis from Alanine,Gluconeogenesis,True,True
+T_SUCCESS_70,Gluconeogenesis from Lactate and Optionally Fatty Acid,Gluconeogenesis,True,True
+T_SUCCESS_71,Gluconeogenesis from Glycerol and Optionally Fatty Acid,Gluconeogenesis,True,True
+T_SUCCESS_72,Gluconeogenesis from Alanine and Optionally Fatty Acid,Gluconeogenesis,True,True
+T_SUCCESS_73,Glucose Storage in Glycogen,Glucose Storage,True,True
+T_SUCCESS_74,Release of Glucose from Glycogen,Glucose Storage,True,True
+T_SUCCESS_75,Fructose Degradation,Sugar Degradation,True,True
+T_SUCCESS_76,Galactose Degradation,Sugar Degradation,True,True
+T_SUCCESS_77,UDP-galactose de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_78,UDP-glucuronate de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_79,GDP-L-fucose de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_80,GDP-mannose de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_81,UDP-N-acetyl D-galactosamine de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_82,CMP-N-acetylneuraminate de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_83,N-Acetylglucosamine de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_84,Glucuronate de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_85,Alanine de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_86,Arginine de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_87,Asparagine de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_88,Aspartate de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_89,Glutamate de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_90,Glycine de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_91,Glutamine de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_92,Proline de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_93,Serine de novo Synthesis,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_94,Cysteine de novo Synthesis from other Amino acids,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_95,Tyrosine de novo Synthesis from other Amino acids,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_96,Homocysteine de novo Synthesis from other Amino acids,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_97,beta-Alanine de novo Synthesis from other Amino acids,De novo Synthesis of Amino acis,True,True
+T_SUCCESS_98,Alanine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_99,Arginine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_100,Asparagine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_101,Aspartate Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_102,Cysteine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_103,Glutamate Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_104,Glycine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_105,Histidine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_106,Isoleucine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_107,Glutamine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_108,Leucine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_109,Lysine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_110,Methionine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_111,Phenylalanine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_112,Proline Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_113,Serine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_114,Threonine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_115,Tryptophan Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_116,Tyrosine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_117,Valine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_118,Homocysteine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_119,Ornithine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_120,beta-Alanine Degradation,Degradation of Amino acis,True,True
+T_SUCCESS_121,Urea from Alanine,Synthesis of Urea,True,True
+T_SUCCESS_122,Urea from Glutamine,Synthesis of Urea,True,True
+T_SUCCESS_123,Creatine de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_124,Heme de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_125,PC de novo Synthesis,De novo Synthesis of Phospholipids,True,True
+T_SUCCESS_126,PE de novo Synthesis,De novo Synthesis of Phospholipids,True,True
+T_SUCCESS_127,PS de novo Synthesis,De novo Synthesis of Phospholipids,True,True
+T_SUCCESS_128,PI de novo Synthesis,De novo Synthesis of Phospholipids,True,True
+T_SUCCESS_129,Cardiolipin de novo Synthesis,De novo Synthesis of Phospholipids,True,True
+T_SUCCESS_130,SM de novo Synthesis,De novo Synthesis of Phospholipids,True,True
+T_SUCCESS_131,Ceramide de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_132,Lactosylceramide de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_133,CoA de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_134,NAD de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_135,NADP de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_136,FAD de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_137,Thioredoxin de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_138,THF de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_139,Pyridoxal-P de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_140,Acetoacetate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_141,(R)-3-Hydroxybutanoate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_142,Farnesyl-PP de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_143,Lauric acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_144,Tridecylic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_145,Myristic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_146,9E-tetradecenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_147,7Z-tetradecenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_148,Physeteric acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_149,Pentadecylic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_150,Palmitate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_151,Palmitolate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_152,7-palmitoleic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_153,Margaric acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_154,10Z-heptadecenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_155,9-heptadecylenic  acid  de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_156,Stearate  de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_157,13Z-octadecenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_158,cis-vaccenic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_159,Oleate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_160,Elaidate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_161,7Z-octadecenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_162,"6Z,9Z-octadecadienoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_163,Nonadecylic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_164,Eicosanoate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_165,13Z-Eicosenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_166,cis-gondoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_167,9-Eicosenoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_168,"8,11-Eicosadienoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_169,Mead acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_170,Henicosanoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_171,Behenic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_172,cis-erucic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_173,cis-cetoleic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_174,Tricosanoic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_175,Lignocerate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_176,Nervonic de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_177,Cerotic de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_178,Ximenic de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_179,Stearidonic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_180,omega-3-Arachidonic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_181,EPA de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_182,DPA de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_183,"9Z,12Z,15Z,18Z,21Z-TPA de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_184,"6Z,9Z,12Z,15Z,18Z,21Z-THA de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_185,DHA de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_186,"11Z,14Z,17Z-eicosatrienoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_187,"13,16,19-docosatrienoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_188,"10,13,16,19-docosatetraenoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_189,"12,15,18,21-tetracosatetraenoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_190,gamma-Linolenate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_191,Dihomo-gamma-linolenate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_192,Arachidonate de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_193,Adrenic acid de novo Synthesis,De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_194,"9Z,12Z,15Z,18Z-TTA de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_195,"6Z,9Z,12Z,15Z,18Z-TPA de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_196,"4Z,7Z,10Z,13Z,16Z-DPA de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_197,"11Z,14Z-eicosadienoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_198,"13Z,16Z-docosadienoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_199,"10,13,16-docosatriynoic acid de novo Synthesis",De novo Synthesis of Other Intermediates,True,True
+T_SUCCESS_200,Lauric acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_201,Tridecylic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_202,Myristic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_203,9E-tetradecenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_204,7Z-tetradecenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_205,Physeteric acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_206,Pentadecylic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_207,Palmitate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_208,Palmitolate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_209,7-palmitoleic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_210,Margaric acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_211,10Z-heptadecenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_212,9-heptadecylenic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_213,Stearate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_214,13Z-octadecenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_215,cis-vaccenic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_216,Oleate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_217,Elaidate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_218,7Z-octadecenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_219,"6Z,9Z-octadecadienoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_220,Nonadecylic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_221,Nonadecylic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_222,Eicosanoate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_223,13Z-Eicosenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_224,cis-gondoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_225,9-Eicosenoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_226,"8,11-Eicosadienoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_227,Mead acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_228,Henicosanoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_229,Behenic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_230,cis-erucic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_231,cis-cetoleic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_232,Tricosanoic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_233,Lignocerate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_234,Nervonic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_235,Cerotic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_236,Ximenic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_237,Linolenate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_238,Stearidonic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_239,omega-3-Arachidonic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_240,EPA Oxidation,Complete Oxidations,True,True
+T_SUCCESS_241,DPA Oxidation,Complete Oxidations,True,True
+T_SUCCESS_242,"9Z,12Z,15Z,18Z,21Z-TPA Oxidation",Complete Oxidations,True,True
+T_SUCCESS_243,"6Z,9Z,12Z,15Z,18Z,21Z-THA Oxidation",Complete Oxidations,True,True
+T_SUCCESS_244,DHA Oxidation,Complete Oxidations,True,True
+T_SUCCESS_245,"11Z,14Z,17Z-eicosatrienoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_246,"13,16,19-docosatrienoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_247,"10,13,16,19-docosatetraenoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_248,"12,15,18,21-tetracosatetraenoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_249,Linoleate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_250,gamma-Linolenate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_251,Dihomo-gamma-linolenate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_252,Arachidonate Oxidation,Complete Oxidations,True,True
+T_SUCCESS_253,Adrenic acid Oxidation,Complete Oxidations,True,True
+T_SUCCESS_254,"9Z,12Z,15Z,18Z-TTA Oxidation",Complete Oxidations,True,True
+T_SUCCESS_255,"6Z,9Z,12Z,15Z,18Z-TPA Oxidation",Complete Oxidations,True,True
+T_SUCCESS_256,"4Z,7Z,10Z,13Z,16Z-DPA Oxidation",Complete Oxidations,True,True
+T_SUCCESS_257,"11Z,14Z-eicosadienoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_258,"13Z,16Z-docosadienoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_259,"10,13,16-docosatriynoic acid Oxidation",Complete Oxidations,True,True
+T_SUCCESS_260,Triacylglycerol de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_261,Glycocholate de novo Synthesis and Excretion,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_262,Glycochenodeoxycholate de novo Synthesis and Excretion,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_263,Taurocholate de novo Synthesis and Excretion,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_264,Taurochenodeoxycholate de novo Synthesis and Excretion,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_265,PAPS de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_266,PAP Degradation,Degradation of Intermediates,True,True
+T_SUCCESS_267,SAM de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_268,GSH de novo Synthesis,De novo Synthesis of Intermediates,True,True
+T_SUCCESS_269,Bilirubin Conjugation,Others,True,True
+T_SUCCESS_270,NH3 Import and Degradation,Others,True,True
+T_SUCCESS_271,Ethanol Import and Degradation,Others,True,True
+T_FAIL_1,Oxygen from Water,Should Fail,False,False
+T_FAIL_2,Rephosphorylation of ATP in Cytoplasm,Should Fail,False,False
+T_FAIL_3,Rephosphorylation of ATP in Mitochondria,Should Fail,False,False
+T_FAIL_4,Rephosphorylation of ATP in Peroxisome,Should Fail,False,False
+T_FAIL_5,Rephosphorylation of ATP in Golgi,Should Fail,False,False
+T_FAIL_6,Rephosphorylation of ATP in Endoplasmatic Reticulum,Should Fail,False,False
+T_FAIL_7,Rephosphorylation of ATP in Nucleus,Should Fail,False,False
+T_FAIL_8,Rephosphorylation of ATP in Lysosome,Should Fail,False,False
+T_FAIL_9,Rephosphorylation of ATP from Protons,Should Fail,False,False
+T_FAIL_10,Generation of Reduction Potential in Cytoplasm,Should Fail,False,False
+T_FAIL_11,Generation of Reduction Potential in Mitochondria,Should Fail,False,False
+T_FAIL_12,Generation of Reduction Potential in Peroxisome,Should Fail,False,False
+T_FAIL_13,Generation of Reduction Potential in Cytoplasm (FADH2),Should Fail,False,False
+T_FAIL_14,Generation of Reduction Potential in Mitochondria (FADH2),Should Fail,False,False
+T_FAIL_15,Generation of Reduction Potential in Peroxisome (FADH2),Should Fail,False,False
+T_FAIL_16,Generation of CO2 from nothing,Should Fail,False,False
+T_FAIL_17,ATP  Phosphorilated per mol of Glucose Exceeds 40 mol,Should Fail,False,False
+T_FAIL_18,Free Transport of phosphate from cytoplasmto mitochondria,Should Fail,False,False
+T_FAIL_19,Anaerobic Production of Propanoate from Glucose,Should Fail,False,False
+T_FAIL_20,Anaerobic ATP phosphorylation per glucose exceeds 2,Should Fail,False,False
+T_FAIL_21,ATP Production from Pi and O2,Should Fail,False,False
+T_FAIL_22,Histidine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_23,Isoleucine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_24,Leucine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_25,Lysine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_26,Methionine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_27,Phenylalanine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_28,Threonine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_29,Tryptophan de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_30,Valine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_31,Cysteine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_32,Cystine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_33,Tyrosine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_34,Homocysteine de novo Synthesis,De novo Synthesis of Amino acis,False,False
+T_FAIL_35,Linolenate de novo Synthesis,De novo Synthesis of Other Intermediates,False,False
+T_FAIL_36,Linoleate de novo Synthesis,De novo Synthesis of Other Intermediates,False,False

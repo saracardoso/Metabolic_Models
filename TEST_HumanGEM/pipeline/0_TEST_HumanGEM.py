@@ -1,6 +1,4 @@
 from os.path import join
-import numpy as np
-from pandas import read_csv, DataFrame
 
 from cobra.io import read_sbml_model, write_sbml_model
 from cobra.flux_analysis.variability import find_blocked_reactions
@@ -15,38 +13,33 @@ HumanGEM_dir = join(models_dir, 'HumanGEM')
 
 utility_data_dir = join(base_dir, 'GENERAL/utility_data')
 
+# Files:
+metabolic_tasks_hsa_all = join(utility_data_dir, 'metabolic_tasks_hsa_all.json')
+
 
 '''
-HumanGEM_1.4
+HumanGEM_1.4.1
 '''
 
 # --- Read HumanGEM original model ---
-
-HumanGEM = read_sbml_model(join(HumanGEM_dir, 'HumanGEM-1.4.xml.gz'))
-
+HumanGEM = read_sbml_model(join(HumanGEM_dir, 'HumanGEM-1.4.1.xml.gz'))
 
 # --- Evaluate Model ---
-
-evaluate_HumanGEM = EvaluateModel(model=HumanGEM,
-                                  tasks_file=join(base_dir,
-                                                  'GENERAL/utility_data/metabolic_tasks_hsa_cellViability.json'))
-# Blocked reactions:
-blocked_reactions = find_blocked_reactions(HumanGEM, open_exchanges=True)
-reactions_subsystems = read_csv(join(utility_data_dir, 'reactions_subsystems.csv'))
-blocked_reactions_subsystems = DataFrame(np.zeros((len(blocked_reactions), 2)),
-                                         columns=['Blocked Reaction', 'Subsystem'])
-for i, rxn in enumerate(blocked_reactions):
-    subsystem = reactions_subsystems.iloc[reactions_subsystems.iloc[:, 0].tolist().index(rxn), 1]
-    blocked_reactions_subsystems.iloc[i, :] = [rxn, subsystem]
-# Task evaluation:
+evaluate_HumanGEM = EvaluateModel(model=HumanGEM, tasks_file=metabolic_tasks_hsa_all)
+# - Task evaluation:
 evaluate_HumanGEM.evaluate_tasks()
-evaluate_HumanGEM.tasks_result[0].to_csv(join(base_dir, 'TEST_HumanGEM/task_results_hsa_cellViability.csv'))
-# Test capacity to carry flux over 'biomass_reaction' using different mediums
-# (recon3D medium,  Plasmax, Plasmax_v2, Plasmax_unconstrained, ):
-# Save into data.frame the medium used and the flux through the biomass reaction
-evaluate_HumanGEM.get_media_from_file(join(base_dir,
-                                           'MODEL_RECONSTRUCTIONS/T_CELLS/general/utility_data/Tcell_media_fluxes.csv'))
-evaluate_HumanGEM.evaluate_media_biomass_capacity()
+evaluate_HumanGEM.save_tasks_result_csv(join(base_dir, 'TEST_HumanGEM/task_results_hsa_all.csv'))
+# - Essential exchanges:
+from cobra.flux_analysis.deletion import single_reaction_deletion
+with HumanGEM as model:
+    exchange_reactions = model.exchanges
+    essential_metabolites = single_reaction_deletion(model, reaction_list=exchange_reactions)
+print(essential_metabolites.index[essential_metabolites['growth'] == 0])  # HMR_1967: Lipoic acid, HMR_9269: Vitamin B12
+# Vitamin B12 is given in the media used (Plasmax, HPLM, RPMI-1640). However, there is no mention to lipoic acid in the
+# media formulations. Thus, it will be added to the media. In posteriori analysis of metabolic reconstructions it will
+# be assessed if the exchange of lipoic acid is still essential or not.
+
+
 
 '''
 HumanGEM_forCancer
