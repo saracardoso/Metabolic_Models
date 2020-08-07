@@ -1,4 +1,3 @@
-from os.path import join
 from pandas import read_csv, DataFrame
 import numpy as np
 import warnings
@@ -30,10 +29,12 @@ class EvaluateModel(object):
     def get_tasks_from_file(self, tasks_file):
         task_reader = JSONTaskIO()
         self.tasks = task_reader.read_task(tasks_file)
+        self.tasks_result = None
 
     def get_media_from_file(self, media_file):
         self.media = read_csv(media_file, index_col='ID').to_dict()
         self.media['Default'] = ''
+        self.media_result = None
 
     def evaluate_tasks(self):
         if self.tasks is None:
@@ -64,6 +65,7 @@ class EvaluateModel(object):
                 else:
                     observed = sol[0]
 
+                print(task_id, '|\t', task_name, '|\t', task_group, '|\t', observed, '-', expected)
                 res_df.loc[task_id] = [task_name] + [task_group] + [observed] + [expected]
                 res_dict[task_id] = sol[1].var_values()
         self.tasks_result = (res_df, res_dict)
@@ -89,3 +91,6 @@ class EvaluateModel(object):
                     model_to_test.objective = biomass_reaction
                     res.iloc[i_m, i_r] = model_to_test.slim_optimize()
         self.media_result = res[:]
+
+    def save_tasks_result_csv(self, file_name):
+        self.tasks_result[0].to_csv(file_name)

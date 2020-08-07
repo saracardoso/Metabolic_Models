@@ -1,13 +1,12 @@
 from pandas import read_csv
 from os.path import join
-from os import getcwd
 
 import numpy as np
 
 
-def construct_media_fluxes_file(path_outFile, cell_concentration, cell_weight, time,
+def construct_media_fluxes_file(metabolic_models_dir, path_outFile, cell_concentration, cell_weight, time,
                                 unconstrained_metabolites=None, add_open_bounds_column=True):
-    media_concentrations = read_csv(join(getcwd(), 'general/utility_data/media.csv'), index_col='ID')
+    media_concentrations = read_csv(join(metabolic_models_dir, 'GENERAL/utility_data/media.csv'), index_col='ID')
 
     # Convert metabolites present in the media to fluxes:
     media_fluxes = media_concentrations.iloc[:, :]
