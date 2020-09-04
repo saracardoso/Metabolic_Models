@@ -35,6 +35,7 @@ if __name__ == '__main__':
 
     # Media concentration values will be converted to fluxes using these values and saved to a file:
     # Plus, columns will be added to account for all the media metabolites to be unconstrained.
-    Tcell_media_fluxes = join(base_dir, 'MODEL_RECONSTRUCTIONS/T_CELLS/Tcell_media_fluxes.csv')
+    Tcell_media_fluxes = join(base_dir, 'MODEL_RECONSTRUCTIONS/T_CELLS/general/utility_data/Tcell_media_fluxes.csv')
     construct_media_fluxes_file(base_dir, Tcell_media_fluxes, Tcell_concentration, Tcell_weight, Tcell_time,
-                                unconstrained_metabolites=unconstrain, add_open_bounds_column=True)
+                                unconstrained_metabolites=unconstrain, add_open_bounds_column=True,
+                                media_to_use=['Plasmax', 'Blood_SMDB'])
