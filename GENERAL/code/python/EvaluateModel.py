@@ -84,9 +84,9 @@ class EvaluateModel(object):
             default_medium = model_to_test.medium.copy()
             for i_m, medium in enumerate(self.media.keys()):
                 if medium == 'Default':
-                    model_to_test.medium = default_medium
+                    model_to_test.medium = default_medium.copy()
                 else:
-                    model_to_test.medium = self.media[medium]
+                    model_to_test.medium = self.media[medium].copy()
                 for i_r, biomass_reaction in enumerate(biomass_reactions):
                     model_to_test.objective = biomass_reaction
                     res.iloc[i_m, i_r] = model_to_test.slim_optimize()
@@ -94,3 +94,6 @@ class EvaluateModel(object):
 
     def save_tasks_result_csv(self, file_name):
         self.tasks_result[0].to_csv(file_name)
+
+    def save_media_biomass_capacity_csv(self, file_name):
+        self.media_result.to_csv(file_name)
