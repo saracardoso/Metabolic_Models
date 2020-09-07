@@ -1,14 +1,15 @@
 #Directories:
-base_dir = getwd() # When oppening with ptoject
+base_dir = getwd() # When opening with project
 Omics_data_Repos = '~/Documents/PhD/Omics_Data_Repos'
 
-Metabolic_Models_Repo_general_code = paste(base_dir, 'general_code', sep='/')
-Metabolic_Models_Repo_general_code_utils = paste(Metabolic_Models_Repo_general_code, 'utils', sep='/')
+Metabolic_Models_Repo_general = paste(base_dir, 'GENERAL', sep='/')
+Metabolic_Models_Repo_general_code = paste(Metabolic_Models_Repo_general, 'code', sep='/')
 Metabolic_Models_Repo_general_code_R = paste(Metabolic_Models_Repo_general_code, 'R', sep='/')
+Metabolic_Models_Repo_general_utility_data = paste(Metabolic_Models_Repo_general, 'utility_data', sep='/')
 
-Metabolic_Models_Repo_reconstruction_process_T_CELLS = paste(base_dir, 'pipeline_T_CELLS', sep='/')
-Metabolic_Models_Repo_reconstruction_process_T_CELLS_Tfollicular = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS, 'Tfollicular', sep='/')
-Metabolic_Models_Repo_reconstruction_process_T_CELLS_Tfollicular_PA_calls = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_Tfollicular, 'PA_calls', sep='/')
+Metabolic_Models_Repo_model_reconstructions_T_CELLS = paste(base_dir, 'MODEL_RECONSTRUCTIONS', 'T_CELLS', sep='/')
+Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS, 'subtypes_pipelines', 'Tfollicular', sep='/')
+Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular_PA_calls = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular, 'PA_calls', sep='/')
 
 T_Cell_Data_Repo = paste(Omics_data_Repos, 'T_Cell_Data_Repo', sep='/')
 T_Cell_Data_Repo_Data_Files = paste(T_Cell_Data_Repo, 'Data_Files', sep='/')
@@ -18,9 +19,8 @@ T_Cell_Data_Repo_Data_Files_Tfollicular_Microarray = paste(T_Cell_Data_Repo_Data
 
 #Files:
 PA_calls_file = paste(Metabolic_Models_Repo_general_code_R, 'PA_calls.R', sep='/')
-recon3D_consistent_genes_file = paste(Metabolic_Models_Repo_general_code_utils, 'entrez_genes/recon3D_consistent_genes.txt', sep='/')
-recon3D_consistent_GPR_file = paste(Metabolic_Models_Repo_general_code_utils, 'GPRs/recon3D_consistent_GPR.txt', sep='/')
-recon3DModel_gene_mapping_file = paste(Metabolic_Models_Repo_general_code_utils, 'recon3DModel_gene_mapping.csv', sep='/')
+HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM1.4.1_geneID_mapping.tsv', sep='/')
+HumanGEM_GPR_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_GPRs.txt', sep='/')
 
 Tfollicular_microarray_data_file = paste(T_Cell_Data_Repo_Data_Files_Tfollicular_Microarray, 'Tfollicular_microarray_data.csv', sep='/')
 Tfollicular_rnaseq_data_file = paste(T_Cell_Data_Repo_Data_Files_Tfollicular_RNA_seq, 'Tfollicular_rnaseq_data.csv', sep='/')
@@ -33,9 +33,9 @@ source(PA_calls_file)
 
 #--- Read expression data for PA calls ---
 
-recon3D_consistent_genes = as.character(read.table(recon3D_consistent_genes_file)[,1])
+HumanGEM_genes = as.character(unique(read.table(HumanGEM_genes_file, header=T, skip=1, sep='\t')$Gene_stable_ID))
 
-Tfollicular_expression_data = read_omics_data(recon3D_consistent_genes, recon3DModel_gene_mapping_file,
+Tfollicular_expression_data = read_omics_data(HumanGEM_genes,
                                        transcriptomics_data_files = list(RNAseq=Tfollicular_rnaseq_data_file, Microarray=Tfollicular_microarray_data_file),
                                        transcriptomics_metadata_files = list(RNAseq=Tfollicular_rnaseq_metadata_file, Microarray=Tfollicular_microarray_metadata_file),
                                        proteomics_data_files = NULL,
@@ -43,16 +43,16 @@ Tfollicular_expression_data = read_omics_data(recon3D_consistent_genes, recon3DM
 
 #--- Reaction Calls ---
 
-Tfollicular_PA_calls = PA_reaction_calls(Tfollicular_expression_data, recon3DModel_gene_mapping_file, recon3D_consistent_GPR_file, recon3D_consistent_genes)
+Tfollicular_PA_calls = PA_reaction_calls(Tfollicular_expression_data, HumanGEM_GPR_file, HumanGEM_genes)
 
 # Store data in files:
 for(data_type in names(Tfollicular_PA_calls$calls_per_sample$Transcriptomics)){
-  file_name = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_Tfollicular_PA_calls, '/Tfollicular_t_', data_type, '.csv', sep='')
+  file_name = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular_PA_calls, '/Tfollicular_t_', data_type, '.csv', sep='')
   write.csv(Tfollicular_PA_calls$calls_per_sample$Transcriptomics[[data_type]], file_name, row.names=T, col.names=T)
 }
-file_name = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_Tfollicular_PA_calls, 'Tfollicular_gene_calls.csv', sep='/')
+file_name = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular_PA_calls, 'Tfollicular_gene_calls.csv', sep='/')
 write.csv(Tfollicular_PA_calls$gene_scores, file_name, row.names=T, col.names=F)
-file_name = paste(Metabolic_Models_Repo_reconstruction_process_T_CELLS_Tfollicular_PA_calls, 'Tfollicular_reaction_calls.csv', sep='/')
+file_name = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular_PA_calls, 'Tfollicular_reaction_calls.csv', sep='/')
 write.csv(Tfollicular_PA_calls$reaction_calls, file_name, row.names=T, col.names=T)
 
 
