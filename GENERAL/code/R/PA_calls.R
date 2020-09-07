@@ -7,12 +7,8 @@
 #-read_omics_data
 #--
 #-> Arguments:
-# entrez_genes_universe           -->   vector with the entrez gene ids to consider. Must correspond to those that are present
+# ensembl_genes                   -->   vector with the ensembl gene ids to consider. Must correspond to those that are present
 #                                       in the generic model that will be used for reconstruction
-# gene_mapping_file               -->   string with the path to the file that contains the differents IDs for at least the genes
-#                                       in the generic model. File with 3 columns: entrez, ensembl and symbol
-# map_file_sep                    -->   string with character that separates the different cells in the file gene_mapping_file
-# map_file_header                 -->   boolean value indicating whether the gene_mapping_file contains a row as header or not
 # transcriptomics_data_files      -->   list with two items: RNAseq (string with the path to the RNAseq data file) and
 #                                       Microarray (string with the path to the Microarray data file)
 # transcriptomics_metadata_files  -->   (optional) list with two items: RNAseq (string with the path to the RNAseq metadata
@@ -35,7 +31,7 @@
 #                 -<dataset_name>$ [if available]
 #                     -data
 #                     -metadata [if available]
-read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_sep=',', map_file_header=TRUE,
+read_omics_data = function(ensembl_genes,
                            transcriptomics_data_files = list(RNAseq=NULL, Microarray=NULL),
                            transcriptomics_metadata_files = list(RNAseq=NULL, Microarray=NULL),
                            proteomics_data_files = list(dataset_name=NULL),
@@ -43,14 +39,6 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
   if(is.null(transcriptomics_data_files$RNAseq)&is.null(transcriptomics_data_files$Microarray))
     stop("Please give a file path to the RNAseq data (transcriptomics_data_files$RNAseq) and/or
          a file path to the Microarray data (transcriptomics_data_files$Microarray)")
-  
-  # Get gene mapping: entrez (mandatory) - ensembl (mandatory) - symbol (optional)
-  gene_mapping = read.csv(gene_mapping_file, sep=map_file_sep, header=map_file_header)
-  if(length(entrez_genes_universe) > dim(gene_mapping)[1])
-    stop('Too many genes given.')
-  if(sum(is.na(match(entrez_genes_universe, gene_mapping$entrez)))>0)
-    stop('One or more of the genes given are not present in the map_file given.')
-  ensembl_genes = gene_mapping$ensembl[match(entrez_genes_universe, gene_mapping$entrez)]
   
   # Data will be stored here:
   expression_data = list()
@@ -111,17 +99,13 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
 #--
 #-> Arguments:
 # omics_data                      -->   dataset retrieved from function read_omics_data
-# gene_mapping_file               -->   string with the path to the file that contains the differents IDs for at least the genes
-#                                       in the generic model. File with 3 columns: entrez, ensembl and symbol
 # gpr_file                        -->   string with the path to the file that contains the GPR rules to the reactions
 #                                       from the generic model. File with two columns: reaction IDs and GPR rules in the
 #                                       form of: ( geneA and geneB ) or ( geneC and geneD ), for example.
-# entrez_genes_universe           -->   vector with the entrez gene ids to consider. Must correspond to those that are present
+# ensembl_genes                   -->   vector with the ensembl gene ids to consider. Must correspond to those that are present
 #                                       in the generic model that will be used for reconstruction
-# map_file_sep, gpr_file_sep      -->   string with character that separates the different cells in the files
-#                                       gene_mapping_file and gpr_file, respectively
-# map_file_header,gpr_file_header -->   boolean value indicating whether the gene_mapping_file and gpr_file, respectively,
-#                                       contain a row as header or not
+# gpr_file_sep                    -->   string with character that separates the different cells in the file gpr_file
+# gpr_file_header                 -->   boolean value indicating whether the gpr_file contains a row as header or not
 # or                              -->   function to use regarding the OR rule. Either 'MAX' or 'SUM'. Defaults to 'MAX'.
 #-> Value:
 #List with the following structure:
@@ -134,27 +118,18 @@ read_omics_data = function(entrez_genes_universe, gene_mapping_file, map_file_se
 #                     -<dataset_name>
 #        -gene_scores
 #        -reaction_calls
-PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_genes_universe,
+PA_reaction_calls = function(omics_data, gpr_file, ensembl_genes,
                              or = 'MAX',
-                             map_file_sep=',', map_file_header=TRUE,
-                             gpr_file_sep=' ', gpr_file_header=FALSE){
+                             gpr_file_sep='\t', gpr_file_header=FALSE){
   
   # Get GPR rules for reactions in the generic model:
   gpr_rules = read.table(gpr_file, sep=gpr_file_sep, header=gpr_file_header)
   #gpr_rules[,2] = gsub('[.][1-9]+', '',gpr_rules[,2]) #Remove 'version' .1, .2, ...
   
-  # Get gene mapping: entrez (mandatory) - ensembl (mandatory) - symbol (optional)
-  gene_mapping = read.csv(gene_mapping_file, sep=map_file_sep, header=map_file_header)
-  if(length(entrez_genes_universe) > dim(gene_mapping)[1])
-    stop('Too many genes given.')
-  if(sum(is.na(match(entrez_genes_universe, gene_mapping$entrez)))>0)
-    stop('One or more of the genes given are not present in the map_file given.')
-  gene_mapping = gene_mapping[match(entrez_genes_universe, gene_mapping$entrez),]
-  
   # Gene calls:
   if(is.null(omics_data$Proteomics)){
     #Transcriptomics calls:
-    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Transcriptomics, gene_mapping, only_trans=T)
+    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Transcriptomics, ensembl_genes, only_trans=T)
     #Get named vector:
     transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics[,'Transcriptomics']
     names(transcriptomics_gene_calls) = rownames(transcriptomics_calls$calls_per_omics)
@@ -163,7 +138,7 @@ PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_gen
   }
   else{
     #Transcriptomics calls:
-    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Transcriptomics, gene_mapping, only_trans=F)
+    transcriptomics_calls = PA_transcriptomics_calls(omics_data$Transcriptomics, ensembl_genes, only_trans=F)
     #Get named vector:
     transcriptomics_gene_calls = transcriptomics_calls$calls_per_omics[,'Transcriptomics']
     names(transcriptomics_gene_calls) = rownames(transcriptomics_calls$calls_per_omics)
@@ -175,7 +150,7 @@ PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_gen
     names(transcriptomics_presence) = rownames(transcriptomics_calls$calls_per_omics)
     
     #Proteomics calls:
-    proteomics_calls = PA_proteomics_calls(omics_data$Proteomics, gene_mapping)
+    proteomics_calls = PA_proteomics_calls(omics_data$Proteomics, ensembl_genes)
     #Get named vector:
     proteomics_gene_calls = proteomics_calls$calls_per_omics[,'Proteomics']
     names(proteomics_gene_calls) = rownames(proteomics_calls$calls_per_omics)
@@ -220,16 +195,16 @@ PA_reaction_calls = function(omics_data, gene_mapping_file, gpr_file, entrez_gen
 
 #---GENE PA CALLS: TRANSCRIPTOMICS
 
-PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_trans=T){
+PA_transcriptomics_calls = function(transcriptomics_data, ensembl_genes, only_trans=T){
   
   #PA calls will be stored in this dataset:
-  if(!'RNAseq'%in%names(transcriptomics_data)) RNAseq_init = rep(NA,length(gene_mapping$entrez))
-  else RNAseq_init = rep(0,length(gene_mapping$entrez))
-  if(!'Microarray'%in%names(transcriptomics_data)) Microarray_init = rep(NA,length(gene_mapping$entrez))
-  else Microarray_init = rep(0,length(gene_mapping$entrez))
+  if(!'RNAseq'%in%names(transcriptomics_data)) RNAseq_init = rep(NA,length(ensembl_genes))
+  else RNAseq_init = rep(0,length(ensembl_genes))
+  if(!'Microarray'%in%names(transcriptomics_data)) Microarray_init = rep(NA,length(ensembl_genes))
+  else Microarray_init = rep(0,length(ensembl_genes))
   final_gene_calls = data.frame(RNAseq=RNAseq_init, Microarray=Microarray_init,
-                                Transcriptomics=rep(-1,length(gene_mapping$entrez)),
-                                row.names=gene_mapping$entrez)
+                                Transcriptomics=rep(-1,length(ensembl_genes)),
+                                row.names=ensembl_genes)
   
   #List where PA results will be stored:
   PA_res = list()
@@ -256,20 +231,20 @@ PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_tra
         PA_calls[gene, transcriptomics_data[[exp_data]]$data[gene,]>=t] = 1
       }
       
-      PA_res$calls_per_sample[[exp_data]] = as.data.frame(matrix(rep(0,length(gene_mapping$entrez)*n_samples),
-                                  nrow=length(gene_mapping$entrez), ncol=n_samples))
+      PA_res$calls_per_sample[[exp_data]] = as.data.frame(matrix(rep(0,length(ensembl_genes)*n_samples),
+                                  nrow=length(ensembl_genes), ncol=n_samples))
       colnames(PA_res$calls_per_sample[[exp_data]]) = colnames(transcriptomics_data[[exp_data]]$data)
-      rownames(PA_res$calls_per_sample[[exp_data]]) = gene_mapping$entrez
+      rownames(PA_res$calls_per_sample[[exp_data]]) = ensembl_genes
       for(samp in colnames(PA_res$calls_per_sample[[exp_data]])){
         pa_cals_intermediate = PA_calls[,samp]
         names(pa_cals_intermediate) = rownames(PA_calls)
-        PA_res$calls_per_sample[[exp_data]][,samp] = pa_cals_intermediate[gene_mapping$ensembl]
+        PA_res$calls_per_sample[[exp_data]][,samp] = pa_cals_intermediate[ensembl_genes]
       } 
       
       PA_calls_average = rowMeans(PA_calls)
-      final_gene_calls[,exp_data] = PA_calls_average[gene_mapping$ensembl]
+      final_gene_calls[,exp_data] = PA_calls_average[ensembl_genes]
     }
-    else final_gene_calls[,exp_data] = rep(NA, length(gene_mapping$ensembl))
+    else final_gene_calls[,exp_data] = rep(NA, length(ensembl_genes))
     
   }
   
@@ -326,16 +301,16 @@ PA_transcriptomics_calls = function(transcriptomics_data, gene_mapping, only_tra
 
 #---GENE PA CALLS: PROTEOMICS
 
-PA_proteomics_calls = function(proteomics_data, gene_mapping){
+PA_proteomics_calls = function(proteomics_data, ensembl_genes){
   
   #PA calls will be stored in this dataset:
   final_gene_calls = c()
   for(exp_data in names(proteomics_data)){
-    if(!is.null(proteomics_data[[exp_data]]$data)) final_gene_calls = cbind(final_gene_calls, rep(NA,length(gene_mapping$entrez)))
+    if(!is.null(proteomics_data[[exp_data]]$data)) final_gene_calls = cbind(final_gene_calls, rep(NA,length(ensembl_genes)))
   }
-  final_gene_calls = cbind(final_gene_calls, rep(-1,length(gene_mapping$entrez)))
+  final_gene_calls = cbind(final_gene_calls, rep(-1,length(ensembl_genes)))
   colnames(final_gene_calls) = c(names(proteomics_data), 'Proteomics')
-  row.names(final_gene_calls) = gene_mapping$entrez
+  row.names(final_gene_calls) = ensembl_genes
   
   #List where PA results will be stored:
   PA_res = list()
@@ -362,20 +337,20 @@ PA_proteomics_calls = function(proteomics_data, gene_mapping){
         PA_calls[gene, proteomics_data[[exp_data]]$data[gene,]>=t] = 1
       }
       
-      PA_res$calls_per_sample[[exp_data]] = as.data.frame(matrix(rep(0,length(gene_mapping$entrez)*n_samples),
-                                                nrow=length(gene_mapping$entrez), ncol=n_samples))
+      PA_res$calls_per_sample[[exp_data]] = as.data.frame(matrix(rep(0,length(ensembl_genes)*n_samples),
+                                                nrow=length(ensembl_genes), ncol=n_samples))
       colnames(PA_res$calls_per_sample[[exp_data]]) = colnames(proteomics_data[[exp_data]]$data)
-      rownames(PA_res$calls_per_sample[[exp_data]]) = gene_mapping$entrez
+      rownames(PA_res$calls_per_sample[[exp_data]]) = ensembl_genes
       for(samp in colnames(PA_res$calls_per_sample[[exp_data]])){
         pa_cals_intermediate = PA_calls[,samp]
         names(pa_cals_intermediate) = rownames(PA_calls)
-        PA_res$calls_per_sample[[exp_data]][,samp] = pa_cals_intermediate[gene_mapping$ensembl]
+        PA_res$calls_per_sample[[exp_data]][,samp] = pa_cals_intermediate[ensembl_genes]
       } 
       
       PA_calls_average = rowMeans(PA_calls)
-      final_gene_calls[,exp_data] = PA_calls_average[gene_mapping$ensembl]
+      final_gene_calls[,exp_data] = PA_calls_average[ensembl_genes]
     }
-    else final_gene_calls[,exp_data] = rep(NA, length(gene_mapping$ensembl))
+    else final_gene_calls[,exp_data] = rep(NA, length(ensembl_genes))
     
   }
   
