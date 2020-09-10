@@ -4575,7 +4575,7 @@ if __name__ == '__main__':
 
 
     '''
-    HumanGEM GPRs
+    HumanGEM GPRs and GENES
     '''
 
     # Directories:
@@ -4596,4 +4596,14 @@ if __name__ == '__main__':
     f = open(join(general_utility_data_dir, 'HumanGEM-1.4.1_GPRs.txt'), 'w')
     for item in reaction_ids:
         f.write("%s\t%s\n" % (item, HumanGEM.reactions.get_by_id(item).gene_reaction_rule))
+    f.close()
+
+    # --- Get HumanGEM model's genes ---
+    print('Collecting genes from HumanGEM-1.4.1')
+    gene_ids = []
+    for i in HumanGEM.genes:
+        gene_ids.append(i.id)
+    f = open(join(general_utility_data_dir, 'HumanGEM-1.4.1_GENES.txt'), 'w')
+    for item in gene_ids:
+        f.write("%s\n" % item)
     f.close()

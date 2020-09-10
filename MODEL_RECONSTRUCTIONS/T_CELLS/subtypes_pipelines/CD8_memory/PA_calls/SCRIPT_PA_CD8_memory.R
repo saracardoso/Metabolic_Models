@@ -20,7 +20,7 @@ T_Cell_Data_Repo_Data_Files_CD8_memory_Proteomics = paste(T_Cell_Data_Repo_Data_
 
 #Files:
 PA_calls_file = paste(Metabolic_Models_Repo_general_code_R, 'PA_calls.R', sep='/')
-HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM1.4.1_geneID_mapping.tsv', sep='/')
+HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_geneID_mapping.tsv', sep='/')
 HumanGEM_GPR_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_GPRs.txt', sep='/')
 
 CD8_memory_microarray_data_file = paste(T_Cell_Data_Repo_Data_Files_CD8_memory_Microarray, 'CD8_memory_microarray_data.csv', sep='/')
@@ -35,7 +35,7 @@ source(PA_calls_file)
 
 #--- Read expression data for PA calls ---
 
-HumanGEM_genes = as.character(unique(read.table(HumanGEM_genes_file, header=T, skip=1, sep='\t')$Gene_stable_ID))
+HumanGEM_genes = as.character(unique(read.csv(HumanGEM_genes_file, header=T)$Gene_stable_ID))
 
 CD8_memory_expression_data = read_omics_data(HumanGEM_genes,
                                             transcriptomics_data_files = list(RNAseq=CD8_memory_rnaseq_data_file, Microarray=CD8_memory_microarray_data_file),
