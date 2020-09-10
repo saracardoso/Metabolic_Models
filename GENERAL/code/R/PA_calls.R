@@ -488,7 +488,7 @@ PA_algorithms_reaction_calls = function(reaction_calls){
   reaction_ids = names(reaction_calls)
   
   # Scores will be calculated for the following algorithms:
-  algos = c('FastCore','GIMME','IMAT','CORDA','tINIT')
+  algos = c('FASTcore','GIMME','IMAT','CORDA','tINIT')
   
   #Initiate data.frame where results will be stored:
   algo_reaction_calls = data.frame(original=reaction_calls,
@@ -503,13 +503,13 @@ PA_algorithms_reaction_calls = function(reaction_calls){
   for(reaction in reaction_ids){
     if(!is.na(reaction_calls[reaction])){
       if(reaction_calls[reaction] == 3)
-        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 20)
+        algo_reaction_calls[reaction,algos] = c('Present', 2, 2, 'High', 20)
       else if(reaction_calls[reaction] == 2)
-        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 2, 2, 'High', 15)
+        algo_reaction_calls[reaction,algos] = c('Present', 2, 2, 'High', 15)
       else if(reaction_calls[reaction] == 1)
-        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('Present', 1, 1, 'Medium', 10)
+        algo_reaction_calls[reaction,algos] = c('Present', 1, 1, 'Medium', 10)
       else if(reaction_calls[reaction] == 0)
-        algo_reaction_calls[reaction,c('FastCore','GIMME','IMAT','CORDA','tINIT')] = c('-', 0, 0, 'Negative', -8)
+        algo_reaction_calls[reaction,algos] = c('-', 0, 0, 'Negative', -8)
     }
   }
   
