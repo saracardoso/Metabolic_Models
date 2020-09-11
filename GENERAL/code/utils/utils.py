@@ -4577,7 +4577,6 @@ if __name__ == '__main__':
     # The following tasks were removed:
     # T_FAIL_5, T_FAIL_8
 
-
     '''
     HumanGEM GPRs and GENES
     '''
@@ -4588,10 +4587,9 @@ if __name__ == '__main__':
 
     general_utility_data_dir = join(base_dir, 'GENERAL/utility_data')
 
-    # --- Read HumanGEM_forTcells original model ---
-    print('Reading HumanGEM-1.4.1...')
+    # --- Read HumanGEM-1.4.1 original model ---
+    print('\nReading HumanGEM-1.4.1...')
     HumanGEM = read_sbml_model(join(HumanGEM_dir, 'HumanGEM-1.4.1.xml.gz'))
-
     # --- Get HumanGEM model's GPRs ---
     print('Collecting GPR rules from HumanGEM-1.4.1')
     reaction_ids = []
@@ -4601,13 +4599,34 @@ if __name__ == '__main__':
     for item in reaction_ids:
         f.write("%s\t%s\n" % (item, HumanGEM.reactions.get_by_id(item).gene_reaction_rule))
     f.close()
-
     # --- Get HumanGEM model's genes ---
     print('Collecting genes from HumanGEM-1.4.1')
     gene_ids = []
     for i in HumanGEM.genes:
         gene_ids.append(i.id)
     f = open(join(general_utility_data_dir, 'HumanGEM-1.4.1_GENES.txt'), 'w')
+    for item in gene_ids:
+        f.write("%s\n" % item)
+    f.close()
+
+    # --- Read HumanGEM_1.4.1_consistent original model ---
+    print('\nReading HumanGEM-1.4.1_consistent...')
+    HumanGEM_consistent = read_sbml_model(join(HumanGEM_dir, 'HumanGEM-1.4.1_consistent.xml.gz'))
+    # --- Get HumanGEM model's GPRs ---
+    print('Collecting GPR rules from HumanGEM-1.4.1_consistent')
+    reaction_ids = []
+    for i in HumanGEM_consistent.reactions:
+        reaction_ids.append(i.id)
+    f = open(join(general_utility_data_dir, 'HumanGEM-1.4.1_consistent_GPRs.txt'), 'w')
+    for item in reaction_ids:
+        f.write("%s\t%s\n" % (item, HumanGEM_consistent.reactions.get_by_id(item).gene_reaction_rule))
+    f.close()
+    # --- Get HumanGEM model's genes ---
+    print('Collecting genes from HumanGEM-1.4.1_consistent')
+    gene_ids = []
+    for i in HumanGEM_consistent.genes:
+        gene_ids.append(i.id)
+    f = open(join(general_utility_data_dir, 'HumanGEM-1.4.1_consistent_GENES.txt'), 'w')
     for item in gene_ids:
         f.write("%s\n" % item)
     f.close()
