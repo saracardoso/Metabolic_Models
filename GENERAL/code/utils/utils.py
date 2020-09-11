@@ -4573,6 +4573,10 @@ if __name__ == '__main__':
     jtio.write_task(join(base_dir, 'GENERAL/utility_data/metabolic_tasks_hsa_all.json'),
                     all_hsa_tasks)
 
+    # --- Metabolic Tasks for all Human Cells - for HumanGEM_consistent
+    # The following tasks were removed:
+    # T_FAIL_5, T_FAIL_8
+
 
     '''
     HumanGEM GPRs and GENES

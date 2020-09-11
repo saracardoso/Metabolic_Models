@@ -260,10 +260,8 @@ T_FAIL_1,Oxygen from Water,Should Fail,False,False
 T_FAIL_2,Rephosphorylation of ATP in Cytoplasm,Should Fail,False,False
 T_FAIL_3,Rephosphorylation of ATP in Mitochondria,Should Fail,False,False
 T_FAIL_4,Rephosphorylation of ATP in Peroxisome,Should Fail,False,False
-T_FAIL_5,Rephosphorylation of ATP in Golgi,Should Fail,False,False
 T_FAIL_6,Rephosphorylation of ATP in Endoplasmatic Reticulum,Should Fail,False,False
 T_FAIL_7,Rephosphorylation of ATP in Nucleus,Should Fail,False,False
-T_FAIL_8,Rephosphorylation of ATP in Lysosome,Should Fail,False,False
 T_FAIL_9,Rephosphorylation of ATP from Protons,Should Fail,False,False
 T_FAIL_10,Generation of Reduction Potential in Cytoplasm,Should Fail,False,False
 T_FAIL_11,Generation of Reduction Potential in Mitochondria,Should Fail,False,False
