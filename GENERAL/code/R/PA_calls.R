@@ -446,7 +446,6 @@ PA_gene_calls = function(transcriptomics_gene_calls, transcriptomics_presence=NU
 #gpr_rules    -->   data.frame with two columns. First: reaction IDs from the generic model. Second: GPR rules
 PA_from_gene_to_reaction_calls = function(gene_calls, gpr_rules, or = 'MAX'){
   
-  #Reaction calls:
   reaction_calls = c()
   for(reaction in 1:dim(gpr_rules)[1]){
     gpr_str = gpr_rules[reaction,2]
@@ -476,6 +475,9 @@ PA_from_gene_to_reaction_calls = function(gene_calls, gpr_rules, or = 'MAX'){
   }
   names(reaction_calls) = gpr_rules[,1]
   
+  # Give biomass reactions maximum score (3):
+  reaction_calls[grep('^biomass_', names(reaction_calls))] = 3
+  
   return(reaction_calls)
 }
 
@@ -492,7 +494,7 @@ PA_algorithms_reaction_calls = function(reaction_calls){
   
   #Initiate data.frame where results will be stored:
   algo_reaction_calls = data.frame(original=reaction_calls,
-                              FastCore=rep('-', length(reaction_ids)),
+                              FASTcore=rep('-', length(reaction_ids)),
                               GIMME=rep(-1, length(reaction_ids)),
                               IMAT=rep(-1, length(reaction_ids)),
                               CORDA=rep('-', length(reaction_ids)),

@@ -8,6 +8,8 @@ Metabolic_Models_Repo_general_code_R = paste(Metabolic_Models_Repo_general_code,
 Metabolic_Models_Repo_general_utility_data = paste(Metabolic_Models_Repo_general, 'utility_data', sep='/')
 
 Metabolic_Models_Repo_model_reconstructions_T_CELLS = paste(base_dir, 'MODEL_RECONSTRUCTIONS', 'T_CELLS', sep='/')
+Metabolic_Models_Repo_model_reconstructions_T_CELLS_general_utility_data = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS, 'general/utility_data', sep='/')
+
 Metabolic_Models_Repo_model_reconstructions_T_CELLS_CTL = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS, 'subtypes_pipelines', 'CTL', sep='/')
 Metabolic_Models_Repo_model_reconstructions_T_CELLS_CTL_PA_calls = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_CTL, 'PA_calls', sep='/')
 
@@ -20,8 +22,8 @@ T_Cell_Data_Repo_Data_Files_CTL_Proteomics = paste(T_Cell_Data_Repo_Data_Files_C
 
 #Files:
 PA_calls_file = paste(Metabolic_Models_Repo_general_code_R, 'PA_calls.R', sep='/')
-HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_geneID_mapping.tsv', sep='/')
-HumanGEM_GPR_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_GPRs.txt', sep='/')
+HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_consistent_geneID_mapping.csv', sep='/')
+HumanGEM_GPR_file = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_general_utility_data, 'HumanGEM-1.4.1_forTcells_GPRs.txt', sep='/')
 
 CTL_microarray_data_file = paste(T_Cell_Data_Repo_Data_Files_CTL_Microarray, 'CTL_microarray_data.csv', sep='/')
 CTL_rnaseq_data_file = paste(T_Cell_Data_Repo_Data_Files_CTL_RNA_seq, 'CTL_rnaseq_data.csv', sep='/')

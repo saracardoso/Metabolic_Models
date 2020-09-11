@@ -8,6 +8,8 @@ Metabolic_Models_Repo_general_code_R = paste(Metabolic_Models_Repo_general_code,
 Metabolic_Models_Repo_general_utility_data = paste(Metabolic_Models_Repo_general, 'utility_data', sep='/')
 
 Metabolic_Models_Repo_model_reconstructions_T_CELLS = paste(base_dir, 'MODEL_RECONSTRUCTIONS', 'T_CELLS', sep='/')
+Metabolic_Models_Repo_model_reconstructions_T_CELLS_general_utility_data = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS, 'general/utility_data', sep='/')
+
 Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS, 'subtypes_pipelines', 'Tfollicular', sep='/')
 Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular_PA_calls = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_Tfollicular, 'PA_calls', sep='/')
 
@@ -16,11 +18,12 @@ T_Cell_Data_Repo_Data_Files = paste(T_Cell_Data_Repo, 'Data_Files', sep='/')
 T_Cell_Data_Repo_Data_Files_Tfollicular = paste(T_Cell_Data_Repo_Data_Files, 'Tfollicular', sep='/')
 T_Cell_Data_Repo_Data_Files_Tfollicular_RNA_seq = paste(T_Cell_Data_Repo_Data_Files_Tfollicular, 'RNA_seq', sep='/')
 T_Cell_Data_Repo_Data_Files_Tfollicular_Microarray = paste(T_Cell_Data_Repo_Data_Files_Tfollicular, 'Microarray', sep='/')
+T_Cell_Data_Repo_Data_Files_Tfollicular_Proteomics = paste(T_Cell_Data_Repo_Data_Files_Tfollicular, 'Proteomics', sep='/')
 
 #Files:
 PA_calls_file = paste(Metabolic_Models_Repo_general_code_R, 'PA_calls.R', sep='/')
-HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_geneID_mapping.tsv', sep='/')
-HumanGEM_GPR_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_GPRs.txt', sep='/')
+HumanGEM_genes_file = paste(Metabolic_Models_Repo_general_utility_data, 'HumanGEM-1.4.1_consistent_geneID_mapping.csv', sep='/')
+HumanGEM_GPR_file = paste(Metabolic_Models_Repo_model_reconstructions_T_CELLS_general_utility_data, 'HumanGEM-1.4.1_forTcells_GPRs.txt', sep='/')
 
 Tfollicular_microarray_data_file = paste(T_Cell_Data_Repo_Data_Files_Tfollicular_Microarray, 'Tfollicular_microarray_data.csv', sep='/')
 Tfollicular_rnaseq_data_file = paste(T_Cell_Data_Repo_Data_Files_Tfollicular_RNA_seq, 'Tfollicular_rnaseq_data.csv', sep='/')
