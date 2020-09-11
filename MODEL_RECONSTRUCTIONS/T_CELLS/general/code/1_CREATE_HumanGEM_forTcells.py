@@ -4,15 +4,14 @@ if __name__ == '__main__':
     from cobra.io import read_sbml_model, write_sbml_model
     from cobra import Reaction
 
+    from cobra.flux_analysis import find_blocked_reactions
+
     # Base Directories:
     base_dir = '/home/scardoso/Documents/PhD/Metabolic_Models'
     models_dir = join(base_dir, '0MODELS')
     HumanGEM_dir = join(models_dir, 'HumanGEM')
 
     utility_data_dir = join(base_dir, 'GENERAL/utility_data')
-
-    # Files:
-    metabolic_tasks_hsa_all = join(utility_data_dir, 'metabolic_tasks_hsa_all.json')
 
     # --- Read HumanGEM original model ---
     print('Reading HumanGEM model...')
@@ -46,7 +45,20 @@ if __name__ == '__main__':
     })
     HumanGEM_forTcells.reactions.biomass_macrophage_iABAM01410.gene_reaction_rule = ''
 
-    # Write the model io a sbml file:
+    # --- Remove blocked reactions
+    print('Before removing blocked Reactions:')
+    print('- Number of Reactions:', len(HumanGEM_forTcells.reactions))
+    print('- Number of Genes:', len(HumanGEM_forTcells.genes))
+    print('- Number of Metabolites:', len(HumanGEM_forTcells.metabolites))
+
+    print('\nRemoving blocked reactions:')
+    blocked_reactions = find_blocked_reactions(HumanGEM_forTcells, open_exchanges=True)
+    HumanGEM_forTcells.remove_reactions(blocked_reactions, remove_orphans=True)
+    print('- Number of Reactions:', len(HumanGEM_forTcells.reactions))
+    print('- Number of Genes:', len(HumanGEM_forTcells.genes))
+    print('- Number of Metabolites:', len(HumanGEM_forTcells.metabolites))
+
+    # --- Write the model io a sbml file:
     print('Saving model...')
     write_sbml_model(HumanGEM_forTcells, join(HumanGEM_dir, 'HumanGEM-1.4.1_forTcells.xml.gz'))
     print('Done.')
