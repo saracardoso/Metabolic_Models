@@ -1,0 +1,14 @@
+Reading HumanGEM-1.8.0:
+- Number of Reactions: 13083
+- Number of Genes: 3625
+- Number of Metabolites: 8378
+
+Removing blocked reactions:
+cobra/core/group.py:110 UserWarning: need to pass in a list
+- Number of Reactions: 11894
+- Number of Genes: 3052
+- Number of Metabolites: 7131
+
+Saving consistent HumanGEM model...
+
+Done.
