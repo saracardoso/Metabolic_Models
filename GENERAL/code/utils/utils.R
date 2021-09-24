@@ -138,3 +138,35 @@ write.csv(serum_concentrations_final, '/home/scardoso/Downloads/serum_concentrat
 
 
 
+# ################################################################################## #
+# OBTAIN FILE FOR GENE ID MAPPING OF CONSISTENT HUMANGEM MODEL, FOR SYMBOLS-ENSEMBLE #
+# ################################################################################## #
+
+alignment_mapping_file = './GENERAL/utility_data/genes_mapping_alignment.tsv'
+humangem_mapping_file = './GENERAL/utility_data/genes_mapping_humangem.tsv'
+
+alignment_mapping = read.table(alignment_mapping_file, header=TRUE, skip=1, sep='\t')
+humangem_mapping = read.table(humangem_mapping_file, header=TRUE)
+
+consistent_humangem_genes = read.table('./GENERAL/utility_data/HumanGEM-1.8.0_consistent_GENES.txt')$V1
+
+alignment_mapping = alignment_mapping[,c(1,5)]
+alignment_mapping = unique(alignment_mapping)
+alignment_mapping = alignment_mapping[match(consistent_humangem_genes, alignment_mapping$Gene_stable_ID),]
+
+humangem_mapping = humangem_mapping[,c(1,5)]
+humangem_mapping = unique(humangem_mapping)
+humangem_mapping = humangem_mapping[match(consistent_humangem_genes, humangem_mapping$genes),]
+
+both_mappings = cbind(alignment_mapping, humangem_mapping$geneSymbols)
+both_mappings[both_mappings[,2]!=both_mappings[,3],] # Ensemble genes with different gene symbols associated (same gene, but different names)
+
+final_mapping = list()
+for(gene in unique(c(both_mappings$Gene_name, both_mappings$`humangem_mapping$geneSymbols`))){
+  if(gene%in%both_mappings$Gene_name) ensemble = both_mappings$Gene_stable_ID[both_mappings$Gene_name==gene]
+  else ensemble = both_mappings$Gene_stable_ID[both_mappings$`humangem_mapping$geneSymbols`==gene]
+  final_mapping[[gene]] = ensemble
+}
+
+jsonlite::write_json(final_mapping, './GENERAL/utility_data/genes_mapping.json')
+

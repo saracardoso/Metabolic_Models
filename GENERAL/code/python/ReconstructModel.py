@@ -1,136 +1,146 @@
-from pandas import read_csv
-import warnings
+from pandas import read_csv, DataFrame
+from os.path import join
+import numpy as np
+import json
+from tqdm import tqdm
+
+from cobra.io import write_sbml_model
 
 from troppo.methods.reconstruction.fastcore import FastcoreProperties
-from troppo.methods.reconstruction.gimme import GIMMEProperties
-from troppo.methods.reconstruction.imat import IMATProperties
-from troppo.methods.reconstruction.tINIT import tINITProperties
-from troppo.methods.reconstruction.corda import CORDAProperties
-
-from troppo.methods_wrappers import ModelBasedWrapper, ReconstructionWrapper
+from troppo.methods_wrappers import ReconstructionWrapper
 
 
 class ReconstructModel(object):
 
-    def __init__(self, generic_model, algorithm, reaction_calls_file, reconstructed_model_name, **kwargs):
-        # Model that will be useobjectivesd for reconstruction:
+    def __init__(self, generic_model, raw_counts_file, geneid_mapping_file, raw_counts_cols=None,
+                 tas_global_min=0.1, tas_local=.25, tas_global_max=.75, flux_threshold=1e-7, solver='CPLEX'):
+        # Model that will be used for reconstruction:
         self.generic_model = generic_model.copy()
-        # Check if algorithm wanted is available:
-        if not all(elem in ['Fastcore', 'GIMME', 'IMAT', 'tINIT', 'CORDA'] for elem in [algorithm]):
-            warnings.warn('algorithm given not available. Algorithms available: Fastcore, GIMME, IMAT, tINIT, CORDA')
-            return
+        # Mapping between gene symbols and ensemle ids:
+        with open(geneid_mapping_file) as f: self.geneID_mapping = json.load(f)
+        # Tas thresholds:
+        self.tas_thresholds = {'global_min': tas_global_min, 'local': tas_local, 'global_max': tas_global_max}
+        # Raw, processed and tas expression counts are stored in dictionary:
+        rc = read_csv(raw_counts_file, header=0, index_col=0)
+        self.expression = {}
+        if raw_counts_cols is None:
+            self.expression = {'raw_counts': rc}
         else:
-            self.algorithm = algorithm
-        # Get the reactions calls for the wanted algorithm:
-        self.reaction_calls = self.get_reaction_calls_from_file(reaction_calls_file)
+            if not set(raw_counts_cols).issubset(rc.columns.to_list()):
+                ValueError('Invalid raw_counts_cols.')
+            else:
+                self.expression = {'raw_counts': rc[raw_counts_cols]}
+        self._cpm()
+        # TAS, and RAS, scores for only the genes in the generic model will be stored in a dictionary, as well as
+        # FASTCORE input parameters will be stored here:
+        self.reconstruction_inputs = {}
+        self._set_fastcore_parameters(flux_threshold, solver)
         # Name of the future reconstructed model:
-        self.reconstructed_model_name = reconstructed_model_name
-        # Get the algorithms' properties:
-        self.algorithm_properties = self.get_algorithm_properties(**kwargs)
-        # Where the recnstructed model will be saved:
-        self.reconstructed_model = None
+        self.reconstructed_models_names = self.expression['raw_counts'].columns
+        # Where fastcore properties will be stored:
+        self.fastcore_properties = {}
+        # Where the reconstructed model will be saved:
+        self.reconstructed_models = {}
 
-    def get_reaction_calls_from_file(self, reaction_calls_file):
-        return read_csv(reaction_calls_file, header=0, index_col=0).to_dict()[self.algorithm]
+    def _cpm(self):
+        self.expression['processed_counts'] = self.expression['raw_counts'] / self.expression['raw_counts'].sum(0) * 1e6
 
-    def get_algorithm_properties(self, **kwargs):
+    def _calculate_tas(self):
+        global_min, global_max = np.quantile(self.expression['processed_counts'], [.1, .75])
+        local_thresholds = np.quantile(self.expression['processed_counts'], [.25], axis=1)[0]
 
-        # Check if all necessary arguments for the algorithm wanted are given. If so, create the properties object:
-        if self.algorithm == 'FASTcore':
-            if not all(elem in kwargs.keys() for elem in ['flux_threshold', 'solver']):
-                warnings.warn('FASTcore properties missing. The following arguments must be present: '
-                              'flux_threshold, solver')
-                return None
+        tas_counts = np.array(self.expression['raw_counts'].copy())
+        active = tas_counts >= global_max
+        inactive = tas_counts <= global_min
+        moderate = np.where(np.logical_and(tas_counts > global_min, tas_counts < global_max))
+        tas_counts[active] = np.log2(tas_counts[active] / global_max)
+        tas_counts[inactive] = np.log2(tas_counts[inactive] / global_min)
+        for gene, col in zip(moderate[0], moderate[1]):
+            if local_thresholds[gene] == 0:
+                tas_counts[gene, col] = 1
             else:
-                # Get 'Present' reactions (id):
-                core_reactions_id = [k for (k, v) in self.reaction_calls.items() if v == 'Present']
-                # Get the indexes of said reactions:
-                core_reactions_idx = [self.generic_model.reactions.index(rxn) for rxn in core_reactions_id]
-                # Create FASTcoreProperties object:
-                return FastcoreProperties(core_reactions_idx, flux_threshold=kwargs.get('flux_threshold'),
-                                          solver=kwargs.get('solver'))
+                tas_counts[gene, col] = np.log2(tas_counts[gene, col] / local_thresholds[gene])
 
-        elif self.algorithm == 'GIMME':
-            if not all(elem in kwargs.keys() for elem in ['objectives', 'obj_frac', 'flux_threshold']):
-                warnings.warn('GIMME properties missing. The following arguments must be present: objectives, '
-                              'obj_frac, flux_threshold')
-                return None
-            else:
-                # Convert list of objectives with rereconstructed_modelaction ids to reaction indexes:
-                objectives = kwargs.get('objectives')
-                for x_idx, x_val in enumerate(objectives):
-                    for y_idx, y_val in enumerate(x_val):
-                        objectives[x_idx][y_idx] = self.generic_model.reactions.index(y_val)
-                # Create GIMMEProperties object:
-                return GIMMEProperties(exp_vector=list(self.reaction_calls.values()), objectives=objectives,
-                                       obj_frac=kwargs.get('obj_frac'), preprocess=False,
-                                       flux_threshold=kwargs.get('flux_threshold'))
+        self.expression['tas_counts'] = DataFrame(tas_counts.copy(),
+                                                  index=self.expression['raw_counts'].index,
+                                                  columns=self.expression['raw_counts'].columns)
 
-        elif self.algorithm == 'IMAT':
-            if not all(elem in kwargs.keys() for elem in ['core', 'tolerance', 'epsilon']):
-                warnings.warn('IMAT properties missing. The following arguments must be present: core, '
-                              'tolerance, epsilon')
-                return None
-            else:
-                # Get indexes of core reactions' ids:
-                core_idx = [self.generic_model.reactions.index(rxn) for rxn in kwargs.get('core')]
-                # Create IMATProperties object:
-                return IMATProperties(exp_vector=list(self.reaction_calls.values()), exp_thresholds=[1, 2],
-                                      core=core_idx, tolerance=kwargs.get('tolerance'), epsilon=kwargs.get('epsilon'))
+    def _convert_gene_ids(self):
+        model_ids = [i.id for i in self.generic_model.genes]
+        from_ids = self.expression['tas_counts'].index
+        counts = self.expression['tas_counts'].copy()
+        to_ids = np.array([self.geneID_mapping.get(key) for key in from_ids])
+        counts = counts.loc[[x is not None for x in to_ids],]
+        counts.index = [x[0] for x in list(filter(None, to_ids))]
+        no_info_genes = np.setdiff1d(model_ids, counts.index)
+        counts = counts.append(DataFrame(0, index=no_info_genes, columns=counts.columns))
+        self.reconstruction_inputs['TAS'] = counts.copy()
 
-        elif self.algorithm == 'tINIT':
-            if not all(elem in kwargs.keys() for elem in
-                       ['present_metabolites', 'essential_reactions', 'production_weight', 'allow_excretion',
-                        'no_reverse_loops', 'solver']):
-                warnings.warn('tINIT properties missing. The following arguments must be present: present_metabolites, '
-                              'essential_reactions, production_weight, allow_excretion, no_reverse_loops, solver')
-                return None
-            else:
-                # Get indexes of present_metabolites' ids:
-                present_metabolites = kwargs.get('present_metabolites')
-                if present_metabolites is not None:
-                    present_metabolites_idx = [self.generic_model.metabolites.index(rxn)
-                                               for rxn in present_metabolites]
-                else:
-                    present_metabolites_idx = None
-                # Get indexes of essential_ractions' ids:
-                essential_reactions = kwargs.get('essential_reactions')
-                if essential_reactions is not None:
-                    essential_reactions_idx = [self.generic_model.reactions.index(rxn)
-                                               for rxn in essential_reactions]
-                else:
-                    essential_reactions_idx = None
-                # Create tINITProperties object:
-                return tINITProperties(reactions_scores=list(self.reaction_calls.values()),
-                                       present_metabolites=present_metabolites_idx,
-                                       essential_reactions=essential_reactions_idx,
-                                       production_weight=kwargs.get('production_weight'),
-                                       allow_excretion=kwargs.get('allow_excretion'),
-                                       no_reverse_loops=kwargs.get('no_reverse_loops'), solver=kwargs.get('solver'))
+    def _get_ras(self):
+        ras = np.zeros((len(self.generic_model.reactions), self.reconstruction_inputs['TAS'].shape[1]))
+        rxn_names = []
+        cols = self.reconstruction_inputs['TAS'].columns
+        for i, reaction in tqdm(enumerate(self.generic_model.reactions)):
+            gpr_reaction = reaction.gene_reaction_rule
+            rxn_names = rxn_names + [reaction.id]
+            if gpr_reaction is not '':
+                or_vals = {i: [] for i in cols}
+                for or_part in gpr_reaction.strip().replace('(', '').replace(')', '').split(' or '):
+                    and_part = [x.strip() for x in or_part.strip().split(' and ')]
+                    for col in cols:
+                        or_vals[col] = or_vals[col] + [self.reconstruction_inputs['TAS'].loc[and_part, col].min()]
+                for j, col in enumerate(cols):
+                    ras[i, j] = np.array(or_vals[col]).max()
+        self.reconstruction_inputs['RAS'] = DataFrame(ras.copy(), index=rxn_names, columns=cols)
 
-        elif self.algorithm == 'CORDA':
-            if not all(elem in kwargs.keys() for elem in ['pr_to_np', 'constraint', 'constrainby', 'om', 'ntimes', 'nl',
-                                                          'solver']):
-                warnings.warn('CORDA properties missing. The following arguments must be present: pr_to_np, '
-                              'constraint, constrainby, om, ntimes, nl, solver')
-                return None
-            else:
-                # Get High confidence reactions (ids) and indexes of said reactions:
-                high_rxns_id = [k for (k, v) in self.reaction_calls.items() if v == 'High']
-                high_rxns_idx = [self.generic_model.reactions.index(rxn) for rxn in high_rxns_id]
-                # Get Medium confidence reactions (ids) and indexes oreconstructed_modelf said reactions:
-                medium_rxns_id = [k for (k, v) in self.reaction_calls.items() if v == 'Medium']
-                medium_rxns_idx = [self.generic_model.reactions.index(rxn) for rxn in medium_rxns_id]
-                # Get Negative confidence reactions (ids) and indexes of said reactions:
-                negative_rxns_id = [k for (k, v) in self.reaction_calls.items() if v == 'Negative']
-                negative_rxns_idx = [self.generic_model.reactions.index(rxn) for rxn in negative_rxns_id]
-                # Create CORDAProperties object:
-                return CORDAProperties(high_rxns_idx, medium_rxns_idx, negative_rxns_idx,
-                                       pr_to_np=kwargs.get('pr_to_np'), constraint=kwargs.get('pr_to_np'),
-                                       constrainby=kwargs.get('constrainby'), om=kwargs.get('om'),
-                                       ntimes=kwargs.get('ntimes'), nl=kwargs.get('nl'), solver=kwargs.get('solver'))
+    def _get_core_reactions(self, media):
+        print('here')
+        core_reactions_id = {}
+        core_reactions_idx = {}
+        for col in self.reconstruction_inputs['RAS'].columns:
+            # Get ID of core reactions:
+            core_reactions_id[col] = [k for (k, v) in self.reconstruction_inputs['RAS'][col].items() if v > 0]
+            core_reactions_id[col] = np.unique(core_reactions_id[col] + media).tolist()
+            # Get the indexes of said reactions:
+            core_reactions_idx[col] = [self.generic_model.reactions.index(rxn) for rxn in core_reactions_id[col]]
+            core_reactions_idx[col] = np.unique(core_reactions_idx[col] + [self.generic_model.reactions.index(rxn)
+                                                                           for rxn in media]).tolist()
+        self.reconstruction_inputs['core_reactions_id'] = core_reactions_id
+        self.reconstruction_inputs['core_reactions_idx'] = core_reactions_idx
 
-    def run(self):
-        x = ModelBasedWrapper(self.generic_model)
-        y = ReconstructionWrapper(x)
-        self.reconstructed_model = y.run(self.algorithm_properties)
+    def _set_fastcore_parameters(self, flux_threshold, solver):
+        self.reconstruction_inputs['flux_threshold'] = flux_threshold
+        self.reconstruction_inputs['solver'] = solver
+
+    def _set_algorithm_properties(self):
+        for col in self.reconstructed_models_names:
+            self.fastcore_properties[col] = FastcoreProperties(self.reconstruction_inputs['core_reactions_idx'][col],
+                                                               flux_threshold=
+                                                               self.reconstruction_inputs['flux_threshold'],
+                                                               solver=self.reconstruction_inputs['solver'])
+
+    def run(self, media):
+        # Calculate TAS:
+        print('Calculating TAS scores...')
+        self._calculate_tas()
+        self._convert_gene_ids()
+        # Calculate RAS:
+        print('\n\nCalculating RAS scores...')
+        self._get_ras()
+        print('\n\nGetting core reactions from RAS scores...')
+        self._get_core_reactions(media)
+        # Set properties for each reconstruction:
+        print('\n\nSetting properties for reconstruction(s)...')
+        self._set_algorithm_properties()
+        # Reconstruct models for each column in raw_counts file:
+        print('\n\nReconstructing model(s): ')
+        for col in self.reconstructed_models_names:
+            print('\n--->', col)
+            x = ReconstructionWrapper(self.generic_model)
+            res = x.run(self.fastcore_properties[col])
+            new_model = self.generic_model.copy()
+            for r_idx in range(0, len(self.generic_model.reactions)):
+                if r_idx not in res:
+                    new_model.reactions[r_idx].knock_out()
+            self.reconstructed_models[col] = new_model
+        print('Done!')
