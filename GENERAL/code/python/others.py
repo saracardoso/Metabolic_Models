@@ -1,16 +1,44 @@
 from pandas import read_csv
-from os.path import join
 import warnings
+from os.path import join
 
 import numpy as np
 
 
-def construct_media_fluxes_file(metabolic_models_dir, path_outFile, cell_concentration, cell_weight, time,
+def construct_media_with_serum(media_file, path_outFile, serum_percentage=8, serum_medium='Blood_SMDB',
+                               media_to_change=['Plasmax', 'HPLM', 'RPMI.1640']):
+    media_concentrations = read_csv(media_file, index_col='ID')
+
+    # Check if all media given in media_to_use exist in file:
+    not_present = []
+    for medium_name in media_to_change:
+        if medium_name not in media_concentrations.columns:
+            not_present = not_present + [medium_name]
+    if len(not_present) > 0:
+        warnings.warn('The following media names are invalid: ', not_present)
+        return
+
+    # Change concentrations to new ones:
+    media_final = media_concentrations.loc[:, media_to_change]
+    serum_concentrations = media_concentrations.loc[:, serum_medium]
+    for medium in media_to_change:
+        new_media_name = '_'.join((medium, 'serum'))
+        media_final.loc[:, new_media_name] = ((serum_percentage / 100) * serum_concentrations.astype(float)) + \
+                                             (((100 - serum_percentage) / 100) * media_concentrations.loc[:, medium].astype(float))
+
+    # Add serum concentrations to final dataframe:
+    media_final.loc[:, serum_medium] = serum_concentrations
+
+    # Save final concentraions into the file:
+    media_final.to_csv(path_or_buf=path_outFile)
+
+
+def construct_media_fluxes_file(media_file, path_outFile, cell_concentration, cell_weight, time,
                                 unconstrained_metabolites=None, add_open_bounds_column=True,
                                 media_to_use=['Plasmax', 'HPLM', 'RPMI-1640', 'Blood_SMDB']):
-    media_concentrations = read_csv(join(metabolic_models_dir, 'GENERAL/utility_data/media.csv'), index_col='ID')
+    media_concentrations = read_csv(media_file, index_col='ID')
 
-    # Check if all media fiven in media_to_use exist in file:
+    # Check if all media given in media_to_use exist in file:
     not_present = []
     for medium_name in media_to_use:
         if medium_name not in media_concentrations.columns:
