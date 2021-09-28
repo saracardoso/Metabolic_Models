@@ -6,3 +6,5 @@ venv/
 .Rhistory
 __pycache__/
 *.pyc
+atlas/
+expression_data.Rdata
