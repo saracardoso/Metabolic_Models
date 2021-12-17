@@ -1,7 +1,7 @@
 if __name__ == '__main__':
     from os.path import join
 
-    from GENERAL.code.python.others import construct_media_with_serum
+    from GENERAL.code.python.others import construct_media_with_serum, construct_media_fluxes_file
 
     '''
     Directories and files

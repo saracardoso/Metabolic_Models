@@ -35,7 +35,8 @@ def construct_media_with_serum(media_file, path_outFile, serum_percentage=8, ser
 
 def construct_media_fluxes_file(media_file, path_outFile, cell_concentration, cell_weight, time,
                                 unconstrained_metabolites=None, add_open_bounds_column=True,
-                                media_to_use=['Plasmax', 'HPLM', 'RPMI-1640', 'Blood_SMDB']):
+                                open_bounds_media=['Plasmax', 'HPLM', 'Blood_SMDB'],
+                                media_to_use=['Plasmax', 'HPLM', 'Blood_SMDB']):
     media_concentrations = read_csv(media_file, index_col='ID')
 
     # Check if all media given in media_to_use exist in file:
@@ -61,7 +62,7 @@ def construct_media_fluxes_file(media_file, path_outFile, cell_concentration, ce
 
     # Add columns for media without the concentrations constraint:
     if add_open_bounds_column:
-        for medium in media_to_use:
+        for medium in open_bounds_media:
             to_add = np.array([0] * media_fluxes.shape[0])
             where_open = np.where(media_fluxes.loc[:, medium] != 0)[0]
             to_add[where_open] = 1000
