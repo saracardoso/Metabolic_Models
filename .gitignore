@@ -8,3 +8,6 @@ __pycache__/
 *.pyc
 atlas/
 expression_data.Rdata
+2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched
+2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/noNormalMatched
+2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/Healthy
