@@ -115,6 +115,7 @@ class GapFillModel(EvaluateModel):
 
     def _run_gapfill_media(self):
         with self.model as model_to_test:
+            default_medium = model_to_test.medium.copy()
             # Reactions not in model:
             not_present = []
             for rxn in model_to_test.reactions:
@@ -125,7 +126,11 @@ class GapFillModel(EvaluateModel):
                 for biomass in self.media_result.columns:
                     if self.media_result.loc[medium, biomass] == 0:
                         print('Gap filling medium ', medium, ' for biomass reaction ', biomass)
-                        model_to_test.medium = {key: val for key, val in self.media[medium].copy().items() if val != 0}
+                        if medium != 'Default':
+                            model_to_test.medium = {key: val for key, val in self.media[medium].copy().items()
+                                                    if val != 0}
+                        else:
+                            model_to_test.medium = default_medium
                         model_to_test.objective = biomass
                         gp = GapfillWrapper(model=model_to_test)
                         DEFAULT_CONFIG['BIG_M_VALUE'] = 1e6
@@ -186,48 +191,3 @@ class GapFillModel(EvaluateModel):
         print('- Number of Genes:', len(model_genes))
         print('- Number of Metabolites:', len(model_metabolites))
         pass
-
-
-"""
-    def run_gapfill_tasks(self, default_objective='MAR13082'):
-        # Verify if tasks were run before
-        if self.tasks_result is None:
-            warnings.warn('No tasks results available. Please run them first with evaluate_tasks() function.')
-            return
-        # For each task that did not have the expected output, run gap-fill
-        with self.model as model_to_test:
-            # Close boundaries:
-            bounds_rxns = []
-            for boundary in model_to_test.boundary:
-                boundary.knock_out()
-                bounds_rxns = bounds_rxns + [boundary.id]
-            # Internal reactions not in model:
-            not_present = []
-            for rxn in model_to_test.reactions:
-                if rxn.bounds == (0, 0) and rxn.id not in bounds_rxns:
-                    not_present = not_present + [rxn.id]
-            # Gap-fill tasks, if they failed:
-            for i, task in enumerate(list(self.tasks_result[0].index.values)):
-                if self.tasks_result[0].loc[task, 'Observed'] != self.tasks_result[0].loc[task, 'Expected']:
-                    print('Gap-Fill for task', task)
-
-                    consumed = list(self.tasks[i].inflow_dict.keys())
-                    produced = list(self.tasks[i].outflow_dict.keys())
-
-                    reactions_to_add = self.tasks[i].reaction_dict
-                    if reactions_to_add is not None:
-                        for k, v in reactions_to_add.items():
-                            new_reaction = Reaction(id=k, name=k, subsystem='Artificial reactions',
-                                                     lower_bound=v[1][0], upper_bound=v[1][1])
-                            model_to_test.add_reactions([new_reaction])
-                            model_to_test.reactions.get_by_id(k).add_metabolites(v[0])
-                            model_to_test.reactions.get_by_id(k).gene_reaction_rule = ''
-                    gp = GapfillWrapper(model=model_to_test)# model_to_test)
-                    sol = gp.run(avbl_fluxes=not_present,
-                                 ls_override={'produced': produced, 'consumed': consumed, 'non_consumed': []},
-                                 algorithm='efm')
-                    if len(sol) > 0: self.sol_gapFill_tasks[task] = sol[0]
-                    else: self.sol_gapFill_tasks[task] = []
-                    # model_to_test.remove_reactions(list(reactions_to_add.keys()))
-        print('Done!')
-"""

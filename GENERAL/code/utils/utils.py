@@ -1172,7 +1172,7 @@ if __name__ == '__main__':
     # T_FAIL_5, T_FAIL_8
 
     '''
-    HumanGEM GPRs and GENES
+    HumanGEM GPRs and GENES and subsystems
     '''
 
     # Directories:
@@ -1202,6 +1202,7 @@ if __name__ == '__main__':
     for item in gene_ids:
         f.write("%s\n" % item)
     f.close()
+
 
     # --- Read HumanGEM_1.4.1_consistent original model ---
     print('\nReading HumanGEM-1.8.0_consistent...')

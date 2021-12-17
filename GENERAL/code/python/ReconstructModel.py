@@ -94,7 +94,6 @@ class ReconstructModel(object):
         self.reconstruction_inputs['RAS'] = DataFrame(ras.copy(), index=rxn_names, columns=cols)
 
     def _get_core_reactions(self, media):
-        print('here')
         core_reactions_id = {}
         core_reactions_idx = {}
         for col in self.reconstruction_inputs['RAS'].columns:
