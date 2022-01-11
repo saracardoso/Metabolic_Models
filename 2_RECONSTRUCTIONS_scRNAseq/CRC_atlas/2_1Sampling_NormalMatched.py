@@ -33,21 +33,21 @@ if __name__ == '__main__':
 
     # 1. Normal media, no additional constraints:
     individuals = listdir(CRCReconstructionNormalMatched_dir)
-    for indiv in ['KUL21']: # individuals:
+    for indiv in individuals:
         print('\n', indiv)
         # Get files that starts with 02_
         indiv_samples = [file for file in listdir(join(CRCReconstructionNormalMatched_dir, indiv))
                          if file.startswith('02_')]
-        for samp in ['02_KUL21-N.obj']:#indiv_samples:
+        for samp in ['02_SMC10-N.obj']:# indiv_samples:
             samp_name = samp.replace('.obj', '').replace('02_', '')
             print('- ', samp_name)
             with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
                 temp_dump = load(dump_file)
                 for cell_type, model in temp_dump.items():
                     print('--', cell_type)
-                    if cell_type in ['Naive CD4 Tcells', 'Memory CD4 Tcells', 'Proliferative CD4 Tcells', 'Regulatory CD4 Tcells',
-                                     'Follicular CD4 Tcells', 'Naive CD8 Tcells', 'Cytotoxic CD8 Tcells',
-                                     'Memory CD8 Tcells', 'Proliferative CD8 Tcells']: #abTcells:
+                    if cell_type in ['Naive CD4 Tcells', 'Proliferative CD4 Tcells', 'Regulatory CD4 Tcells',
+                                     'IL17+ CD4 Tcells', 'Follicular CD4 Tcells', 'Naive CD8 Tcells',
+                                     'Memory CD8 Tcells', 'Proliferative CD8 Tcells']: # abTcells:
                         biomass_res = read_csv(join(CRCReconstructionNormalMatched_dir, indiv,
                                                     ''.join(('3_biomassAfter_', samp_name, '.csv'))),
                                                header=0, index_col=0)
