@@ -57,12 +57,15 @@ umap_sampling = function(sampling_results){
 # umap_result: cbind(umap result, metadata dataframe) -> metadata variables must be factors!
 # colour_meta: metadata variable name to colour the samples by
 # shape_meta: metadata variable to shape the samples by
-plot_umap = function(umap_result, colour_meta, shape_meta){ 
+plot_umap = function(umap_result, colour_meta, shape_meta=NULL){ 
   # numeric data is: UMAP_1: umap_result$layout[,1]; UMAP_2: umap_result$layout[,2]
   df_umap = data.frame(UMAP_1 = umap_result$layout[,1], UMAP_2 = umap_result$layout[,2])
   df_umap = cbind(df_umap, metadata)
-  ggplot2::ggplot(df_umap, ggplot2::aes(UMAP_1, UMAP_2)) +
-    ggplot2::geom_point(ggplot2::aes_string(colour=colour_meta, shape=shape_meta))
+  plt = ggplot2::ggplot(df_umap, ggplot2::aes(UMAP_1, UMAP_2))
+  if(!is.null(shape_meta)) 
+    plt = plt + ggplot2::geom_point(ggplot2::aes_string(colour=colour_meta, shape=shape_meta))
+  else plt = plt + ggplot2::geom_point(ggplot2::aes_string(colour=colour_meta))
+  return(plt)
 }
 
 # Differential expression analysis
