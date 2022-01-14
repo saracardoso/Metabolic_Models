@@ -3,6 +3,12 @@ for(file in list.files(code_dir, full.names=TRUE)) source(file)
 
 
 
+# ---------------
+# --- CONTROL ---
+# ---------------
+
+
+
 # -----
 # --- Create json file with names of models that 'passed' the sampling analysis [Control]
 # --- [all samplings will be stored in this file]
@@ -214,7 +220,7 @@ jsonlite::write_json(CRCatlas_sampling, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/
 
 
 # -----
-# --- Read sampling data and metadata - NormalMatched + control
+# --- Read sampling data and metadata
 # -----
 
 # Read metadata of samples:
@@ -240,29 +246,46 @@ for(idx in 1:dim(CRCatlas_sampling_dataframe)[1]){
   # Sampling data:
   for(medium_type in c('Blood_SMDB', 'Plasmax_serum')){
     # Add to list:
+    message('| Reading data from medium ', medium_type, '...')
     mtx = Matrix::Matrix(as.matrix(read.csv(paste('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched',
                                                   individual, '1_sampling/control', sample, gsub(' ', '_', cell_type),
                                                   paste(medium_type, '.csv', sep=''), sep='/'), row.names=1)), sparse=T)
     # Change rownames:
+    message('- Changing row names')
     rownms = paste(sample, gsub(' ', '_', cell_type), medium_type, rownames(mtx), sep='_')
     rownames(mtx) = rownms
     
+    # Randomly choose only 500 samplings:
+    message('- Choosing randomly 500 samplings...')
+    samplings = sample(rownms, 500)
+    mtx = mtx[samplings,]
+    invisible(gc())
+    
     # Add to matrix:
+    message('- Adding new data to the general matrix...')
     CRCatlas_samplingNMControl_matrix = rbind(CRCatlas_samplingNMControl_matrix, mtx)
     
     # Save data until now:
+    message('- Saving the matrix we have until now...')
     Matrix::writeMM(CRCatlas_samplingNMControl_matrix,
                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_data.mtx')
     
     # Samples metadata: [sample, individual, state, cell_type]
-    n_samplings = dim(CRCatlas_samplingNMControl[[individual]][[cell_type]][[medium_type]])[1]
+    message('- Collecting metadata...')
+    n_samplings = dim(mtx)[1]
     samples = c(samples, rep(sample, n_samplings))
     individuals = c(individuals, rep(individual, n_samplings))
     states = c(states, rep(metadata[sample, 'Sample.Source'], n_samplings))
     cell_types = c(cell_types, rep(cell_type, n_samplings))
     media = c(media, rep(medium_type, n_samplings))
     row_names = c(row_names, rownms)
+    
+    # Deleting temporary mtx:
+    message('- Deleting temporary mtx...')
+    remove(mtx)
+    invisible(gc())
   }
+  message('')
 }
 CRCatlas_samplingNMControl_meta = data.frame(sample=samples, individual=individuals, state=states,
                                              cell_type=cell_types, medium=media, row.names=row_names)
@@ -273,18 +296,31 @@ write.csv(CRCatlas_samplingNMControl_meta,
 
 
 
+
+
+# -----
+# --- Pre-Process data for analysis
+# -----
+
+# Remove reactions with 0 flux in more than 10 samplings
+
+# Scale for mean = 0 and varince = 1
+
+# Save normalized data
+
+
+
+
 # -----
 # --- UMAP
 # -----
 
-# Scale
-
 # PCA
 
-# Run UMAP on PCA
+# UMAP
 CRCatlas_samplingNMControl_umap = umap_sampling(CRCatlas_samplingNMControl) # this function will need to change!!
 
-# Plots result
+# Plots of result
 df_umapPlot = cbind(CRCatlas_samplingNMControl_umap, CRCatlas_samplingNMControl_meta)
 plot_umap(df_umapPlot, '')
 
