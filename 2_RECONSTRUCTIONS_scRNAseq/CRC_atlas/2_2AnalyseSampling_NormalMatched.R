@@ -302,11 +302,62 @@ write.csv(CRCatlas_samplingNMControl_meta,
 # --- Pre-Process data for analysis
 # -----
 
+# Read matrix:
+sampling_control_data = Matrix::readMM('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_data.mtx')
+
+# Transpose matrix
+sampling_control_data = Matrix::t(sampling_control_data)
+# Now it is reactions vs samplings, i.e., features vs samples.
+
 # Remove reactions with 0 flux in more than 10 samplings
+nonzero = sampling_control_data > 0
+keep_rxns = Matrix::rowSums(nonzero) >= 10
+sampling_control_data = sampling_control_data[keep_rxns, ]
+remove(nonzero)
+invisible(gc())
 
-# Scale for mean = 0 and varince = 1
+# Normalize samplings to sum to 1 and find highly variable reactions (followed
+# Seurats' code)
+# Normalization by sum
+norm_factors = Matrix::colSums(sampling_control_data)
+sampling_control_dataNorm = Matrix::Matrix(t(apply(sampling_control_data, 1,
+                                                   function(x) x/norm_factors)),
+                                           sparse=T)
+# Calculate reactions means, variances
+rxn_means = Matrix::rowMeans(sampling_control_dataNorm)
+rxn_vars = Seurat::SparseRowVar2(mat=sampling_control_dataNorm,
+                                 mu=rxn_means, display_progress=T)
+# Standardized variance values must be maximum clip.max.
+# Those bigger than clip.max will be set to clip.max
+clip.max = sqrt(ncol(sampling_control_dataNorm))
+# Reactions that are not constant:
+rxns_notConst = rxn_vars > 0
+# Fit a regression line (loess)
+data.loess.info = data.frame(mean=rxn_means, variance=rxn_vars,
+                        variance.expected=0, variance.standardized=0)
+loess.fit = loess(formula=log10(rxn_vars) ~ log10(rxn_means),
+                  data=data.loess.info, span=loess.span)
+# Save fit results in data.loess.info
+data.loess.info$variance.expected[rxns_notConst] <- 10 ^ loess.fit$fitted
+data.loess.info$variance.standardized = 
+  SparseRowVarStd(mat=object, mu=data.loess.info$mean,
+                  sd=sqrt(data.loess.info$variance.expected),
+                  vmax=clip.max, display_progress=verbose)
+# Get top 2 000 most variable reactions
+data.loess.info = data.loess.info[which(data.loess.info[, 1, drop=TRUE]!=0), ]
+data.loess.info = data.loess.info[order(data.loess.info$vst.variance.standardized,
+                                        decreasing=TRUE), , drop=FALSE]
+top_rxns = head(rownames(data.loess.info), n=2000)
 
-# Save normalized data
+# Filter raw matrix to have only the highly variable reactions
+sampling_control_data = sampling_control_data[top_rxns, ]
+
+# Scale raw matrix to for mean = 0 and variance = 1
+sampling_control_dataScaled = scale(sampling_control_data)
+
+# Save scaled data
+Matrix::writeMM(sampling_control_dataScaled,
+                './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_dataScaled.mtx')
 
 
 
@@ -315,14 +366,36 @@ write.csv(CRCatlas_samplingNMControl_meta,
 # --- UMAP
 # -----
 
-# PCA
+# PCA on scaled data, with weighting of feature embeddings by the variance of each PC
+pca.results = irlba::irlba(A=t(sampling_control_dataScaled), nv=50)
+rxn_embeddings = pca.results$u %*% diag(pca.results$d)
+
+# Where components start to elbow
+stdev = pca.results$d/sqrt(max(1, ncol(object) - 1))
+pct = stdev / sum(stdev) * 100
+cumu = cumsum(pct)
+co1 = which(cumu > 90 & pct < 5)[1]
+co2 = sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
+elbow = min(co1, co2)
+plot_df = data.frame(pct=pct, cumu=cumu, rank=1:length(pct))
+ggplot2::ggplot(plot_df, ggplot2::aes(cumu, pct, label = rank, color = rank > elbow)) + 
+  ggplot2::geom_text() + 
+  ggplot2::geom_vline(xintercept = 90, color = "grey") + 
+  ggplot2::geom_hline(yintercept = min(pct[pct > 5]), color = "grey") +
+  ggplot2::theme_bw()
 
 # UMAP
-CRCatlas_samplingNMControl_umap = umap_sampling(CRCatlas_samplingNMControl) # this function will need to change!!
+CRCatlas_samplingNMControl_umap = uwot::umap(NULL,
+                                             nn_method=rxn_embeddings[,1:elbow],
+                                             n_threads=future::nbrOfWorkers(),
+                                             metric='cosine', verbose = TRUE)
 
 # Plots of result
-df_umapPlot = cbind(CRCatlas_samplingNMControl_umap, CRCatlas_samplingNMControl_meta)
+df_umapPlot = cbind(CRCatlas_samplingNMControl_umap,
+                    CRCatlas_samplingNMControl_meta)
 plot_umap(df_umapPlot, '')
+
+
 
 
 
