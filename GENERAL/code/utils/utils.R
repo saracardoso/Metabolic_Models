@@ -170,3 +170,33 @@ for(gene in unique(c(both_mappings$Gene_name, both_mappings$`humangem_mapping$ge
 
 jsonlite::write_json(final_mapping, './GENERAL/utility_data/genes_mapping.json')
 
+
+
+# ##################################################################### #
+# OBTAIN MAPPING OF REACTIONS IN SUBSYSTEMS AND SUBSYSTEMS OF REACTIONS #
+# ##################################################################### #
+
+HumanGEM_data_file = './GENERAL/utility_data/HumanGEM.json'
+
+HumanGEM_data = jsonlite::read_json(HumanGEM_data_file, simplifyVector = T)$subsystems
+
+# subsystems -> reactions
+HumanGEM_rxns = HumanGEM_data$reactionList
+names(HumanGEM_rxns) = HumanGEM_data$name
+remove(HumanGEM_data)
+invisible(gc())
+HumanGEM_subsystems_rxns = HumanGEM_rxns
+jsonlite::write_json(HumanGEM_subsystems_rxns,
+                     './GENERAL/utility_data/subsystems_reactions_mapping.json')
+
+# reactions -> subsystems
+HumanGEM_rxns_subsystems = list()
+for(subsystem in names(HumanGEM_subsystems_rxns)){
+  rxns = HumanGEM_subsystems_rxns[[subsystem]]
+  for(rxn in rxns){
+    HumanGEM_rxns_subsystems[[rxn]] = c(HumanGEM_rxns_subsystems[[rxn]],
+                                        subsystem)
+  }
+}
+jsonlite::write_json(HumanGEM_rxns_subsystems,
+                     './GENERAL/utility_data/reactions_subsystems_mapping.json')
