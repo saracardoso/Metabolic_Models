@@ -1,6 +1,11 @@
 code_dir = './GENERAL/code/R'
 for(file in list.files(code_dir, full.names=TRUE)) source(file)
 
+HumanGEM_rxns_subsystems = jsonlite::read_json('./GENERAL/utility_data/reactions_subsystems_mapping.json',
+                                               simplifyVector = TRUE)
+HumanGEM_subsystems_rxns = jsonlite::read_json('./GENERAL/utility_data/subsystems_reactions_mapping.json',
+                                               simplifyVector = TRUE)
+
 
 
 # ---------------
@@ -357,6 +362,8 @@ invisible(gc())
 # Scale raw matrix to for mean = 0 and variance = 1
 sampling_control_dataScaled = scale(sampling_control_data)
 
+#sampling_control_AllDataScaled = scale(Matrix::t(sampling_control_data_original))
+
 # BATCH CORRECTION FOR DATASETS? WHERE IN THE PROCESSING PIPELINE?
 
 # Save scaled data
@@ -416,38 +423,43 @@ plt + ggplot2::geom_point(ggplot2::aes_string(colour='sample'))
 # --- Differential Flux Analysis
 # -----
 
-# Compare only between same medium when comparing cell-types, and
-# only compare same cell-type when comparing mediums?? - think yes!!
-
-
 # Reactions whose fluxes are significantly different between a cell-type and 
-# all others, regardless of medium
+# all others, for each medium
 
-ct_results = c()
-for(ct in unique(CRCatlas_samplingNMControl_meta$cell_type)){
-  message(ct)
-  # - Only consider reactions whose |log2(fold change)| is higher than 1
-  ct_rxns_means = rowMeans(sampling_control_dataScaled[,CRCatlas_samplingNMControl_meta$cell_type==ct])
-  other_rxns_means = rowMeans(sampling_control_dataScaled[,CRCatlas_samplingNMControl_meta$cell_type!=ct])
-  fc = ct_rxns_means - other_rxns_means
-  names(fc) = row.names(sampling_control_dataScaled)
-  rxns_toTest = names(fc)[fc>1]
-  # - For those reactions, find the ones that are significantly different
-  test_meta1 = data.frame(cell_type=CRCatlas_samplingNMControl_meta$cell_type,
-                          row.names=colnames(sampling_control_dataScaled))
-  test_meta1[test_meta1!=ct] = 'other'
-  p_val = sapply(rxns_toTest,
-    FUN = function(x) {
-      return(wilcox.test(sampling_control_dataScaled[x, ] ~ test_meta1[, "cell_type"])$p.value)
-    }
-  )
-  pval_adjust = p.adjust(p_val, method='fdr')
-  res_ct = data.frame(reaction=rxns_toTest, pval_adjust,
-                      fold_change=fc[rxns_toTest], pval=p_val,
-                      cell_type=ct, row.names=paste(rxns_toTest, ct, sep='_'))
-  ct_results = rbind(ct_results, res_ct)
+ct_results = list()
+for(medium in c('blood', 'plasmax')){
+  message(medium)
+  ct_results[[medium]] = c()
+  for(ct in unique(CRCatlas_samplingNMControl_meta$cell_type)){
+    message('-',ct)
+    medium_samplings = CRCatlas_samplingNMControl_meta$medium==medium
+    ct_medium_samplings = CRCatlas_samplingNMControl_meta$cell_type==ct & medium_samplings
+    other_medium_samplings = CRCatlas_samplingNMControl_meta$cell_type!=ct & medium_samplings
+    # - Only consider reactions whose |log2(fold change)| is higher than 1
+    ct_rxns_means = rowMeans(sampling_control_dataScaled[,ct_medium_samplings])
+    other_rxns_means = rowMeans(sampling_control_dataScaled[,other_medium_samplings])
+    fc = ct_rxns_means - other_rxns_means
+    names(fc) = row.names(sampling_control_dataScaled)
+    rxns_toTest = names(fc)[fc>1]
+    # - For those reactions, find the ones that are significantly different
+    test_meta1 = CRCatlas_samplingNMControl_meta$cell_type
+    test_meta1 = data.frame(cell_type=test_meta1[medium_samplings],
+                            row.names=colnames(sampling_control_dataScaled)[medium_samplings])
+    test_meta1$cell_type[test_meta1$cell_type!=ct] = 'other'
+    p_val = sapply(rxns_toTest,
+      FUN = function(x) {
+        return(wilcox.test(sampling_control_dataScaled[x, medium_samplings] ~ test_meta1[, "cell_type"])$p.value)
+      }
+    )
+    pval_adjust = p.adjust(p_val, method='fdr')
+    res_ct = data.frame(reaction=rxns_toTest, pval_adjust,
+                        fold_change=fc[rxns_toTest], pval=p_val,
+                        cell_type=ct, row.names=paste(rxns_toTest, ct, sep='_'))
+    ct_results[[medium]] = rbind(ct_results[[medium]], res_ct)
+  }
 }
 
+# ----------------------------------------------------------------------------
 # Visualize differential reactions
 rxn = 'MAR07881'
 ct = 'foll'
@@ -462,6 +474,33 @@ ggplot2::ggplot(df, ggplot2::aes(reaction, colour=cell_type)) +
   ggplot2::geom_vline(xintercept=mean(sampling_control_dataScaled[rxn,!ct_samplings]), colour='gray',
                       linetype='dashed') +
   ggplot2::xlab(rxn)
+
+# Ordered list of subsystems with most amount of significant reactions
+ct='prolCD8'
+significant_rxns = ct_results$reaction[ct_results$pval_adjust < 0.01 & ct_results$cell_type==ct]
+sort(table(unlist(HumanGEM_rxns_subsystems[significant_rxns])))
+
+all_significant_rxns = unique(ct_results$reaction)
+subsystems_annotation = unlist(HumanGEM_rxns_subsystems[all_significant_rxns])
+heatmapData = c()
+for(ct in unique(CRCatlas_samplingNMControl_meta$cell_type)){
+  ct_rxns_means = rowMeans(sampling_control_dataScaled[all_significant_rxns, CRCatlas_samplingNMControl_meta$cell_type==ct])
+  other_rxns_means = rowMeans(sampling_control_dataScaled[all_significant_rxns, CRCatlas_samplingNMControl_meta$cell_type!=ct])
+  fc = ct_rxns_means - other_rxns_means
+  heatmapData = cbind(heatmapData, fc)
+}
+colnames(heatmapData) = unique(CRCatlas_samplingNMControl_meta$cell_type)
+heatmapmatrix = as.matrix(heatmapData)
+simple_subsystems_annotation = sapply(subsystems_annotation, function(x) strsplit(x, ' [(]')[[1]][1])
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+top10_represented_subsystems = names(sort(table(simple_subsystems_annotation), decreasing=T)[2:10])
+row_annot=ComplexHeatmap::rowAnnotation(subsystem=simple_subsystems_annotation[simple_subsystems_annotation%in%top10_represented_subsystems])
+ComplexHeatmap::Heatmap(heatmapmatrix[simple_subsystems_annotation%in%top10_represented_subsystems,],
+                        right_annotation = row_annot, row_split = simple_subsystems_annotation[simple_subsystems_annotation%in%top10_represented_subsystems],
+                        cluster_columns=FALSE, cluster_rows=TRUE,
+                        show_column_names=TRUE, show_row_names=FALSE)
+
 
 #rand_samps = sort(sample(1:10000, 5000))
 #col_annot=ComplexHeatmap::HeatmapAnnotation(cell_type=CRCatlas_samplingNMControl_meta$cell_type[rand_samps])
@@ -490,23 +529,10 @@ ggplot2::ggplot(df, ggplot2::aes(reaction, colour=cell_type)) +
 #                        column_split=CRCatlas_samplingNMControl_meta$cell_type[rand_samps],
 #                        show_column_names=FALSE, show_row_names=FALSE,
 #                        top_annotation=col_annot)
+# ----------------------------------------------------------------------------
 
 
-
-# Reactions whose fluxes are significantly different between cell-types,
-# for each medium
-
-
-# What subsystems do these reactions belong to?
-
-
-# Reactions whose fluxes are significantly different between media,
-# regardless of cell-types
-
-
-# Reactions whose fluxes are significantly different between media,
+# Reactions whose fluxes are significantly different between the two media,
 # for each cell-type
 
-
-# What subsystems do these reactions belong to?
 
