@@ -249,7 +249,7 @@ for(idx in 1:dim(CRCatlas_sampling_dataframe)[1]){
           ' ', idx, '/', dim(CRCatlas_sampling_dataframe)[1])
   
   # Sampling data:
-  for(medium_type in c('Blood_SMDB', 'Plasmax_serum')){
+  for(medium_type in c('Blood_SMDB')){
     # Add to list:
     message('| Reading data from medium ', medium_type, '...')
     mtx = Matrix::Matrix(as.matrix(read.csv(paste('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched',
