@@ -304,7 +304,44 @@ write.csv(CRCatlas_samplingNMControl_meta,
 
 
 # -----
-# --- Pre-Process data for analysis
+# --- Compare important reactions between cell-types + state (e.g. naiveCD4_normal)
+# -----
+
+sampling_control_data = Matrix::readMM('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_data.mtx')
+CRCatlas_samplingNMControl_meta = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_metadata.csv',
+                                           row.names=1)
+
+important_rxns = jsonlite::read_json('./GENERAL/utility_data/important_reactions_Tcells.json',
+                                     simplifyVector=TRUE)
+
+# Biomass:
+density_rxn_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                    important_rxns$biomass, colour_by=NULL, cts_order=NULL,
+                    state_order=NULL)
+
+# SLC7A5:
+density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                        important_rxns$uptakes$SLC7A5, 'SLC7A5',
+                        colour_by=NULL, cts_order=NULL, state_order=NULL,
+                        abs=T)
+
+# LDHA:
+density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                        important_rxns$LDHA, 'LDHA', colour_by=NULL, cts_order=NULL,
+                        state_order=NULL)
+
+# OXPHOS:
+density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                        as.vector(important_rxns$subsystems$OXPHOS), 'OXPHOS', colour_by=NULL, cts_order=NULL,
+                        state_order=NULL)
+
+
+
+
+
+
+# -----
+# --- Pre-Process data for differential and PCA analyses
 # -----
 
 # Read matrix:
