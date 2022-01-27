@@ -49,6 +49,89 @@ boxplot_sumrxns_StateCT = function(data, metadata, rxns, rxns_rep, x,
   return(plt)
 }
 
+# Density plots of pathway scores separated by sample state
+# and cell-type:
+density_pathscores_StateCT = function(path_scores_vec, metadata, path_name,
+                                      colour_by=NULL, cts_order=NULL,
+                                      state_order=NULL){
+  # Create data.frame for plotting:
+  samplings_names = names(path_scores_vec)
+  df = cbind(path_scores_vec[samplings_names], metadata[samplings_names, ])
+  colnames(df)[1] = path_name
+  if(is.null(cts_order)) df$cell_type = factor(df$cell_type,
+                                               levels=unique(df$cell_type))
+  else df$cell_type = factor(df$cell_type, levels=cts_order)
+  if(is.null(state_order)) df$state = factor(df$state, levels=unique(df$state))
+  else df$state = factor(df$state, levels=state_order)
+  if(!is.null(colour_by)) df[,colour_by] = factor(df[,colour_by])
+  
+  # Create plot:
+  if(is.null(colour_by)) plt = ggplot2::ggplot(df, ggplot2::aes_string(path_name))
+  else plt = ggplot2::ggplot(df, ggplot2::aes_string(path_name, colour=colour_by))
+  plt = plt + ggplot2::geom_density() +
+    ggplot2::facet_grid(rows=ggplot2::vars(state),
+                        cols=ggplot2::vars(cell_type))
+  
+  return(plt)
+}
+
+
+
+# Pathway scores:
+
+glycolysis_score = function(data){
+  
+  glycolysis_rxns = c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379',
+                      'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04372',
+                      'MAR04368', 'MAR04370', 'MAR04365', 'MAR04363', 'MAR04378')
+  subdata = as.matrix(data[,glycolysis_rxns])
+  # glucose -> G6P
+  glucose_G6P =rowSums(subdata[,c('MAR04394', 'MAR07747')])
+  # G6P -> F6P
+  which_pos = subdata[,'MAR04381'] > 0
+  subdata[which_pos,'MAR04381'] = 0
+  G6P_F6P = abs(subdata[,'MAR04381'])
+  # F6P -> F1,6BP
+  F6P_F16BP = rowSums(subdata[,c('MAR04301', 'MAR04379')])
+  # F1,6BP -> GAP + DHAP
+  which_pos = subdata[,'MAR04375'] > 0
+  subdata[which_pos,'MAR04375'] = 0
+  F16BP_GAPDHAP = abs(subdata[,'MAR04375'])
+  # DHAP -> GAP
+  which_neg = subdata[,'MAR04391'] < 0
+  subdata[which_neg,'MAR04391'] = 0
+  DHAP_GAP = subdata[,'MAR04391']
+  # GAP -> 1,3BPG
+  which_pos = subdata[,'MAR04373'] > 0
+  subdata[which_pos,'MAR04373'] = 0
+  GAP_13BPG = abs(subdata[,'MAR04373'])
+  # 1,3BPG -> 2,3BG
+  BPG_23BG = subdata[,'MAR04371']
+  # 2,3BG -> 3PG
+  BG_3PG = subdata[,'MAR04372']
+  # 1,3BPG -> 3PG
+  which_neg = subdata[,'MAR04368'] < 0
+  subdata[which_neg,'MAR04368'] = 0
+  BPG_3PG = rowSums(subdata[,c('MAR04368', 'MAR04370')])
+  # 3PG -> 2PD
+  which_pos = subdata[,'MAR04365'] > 0
+  subdata[which_pos,'MAR04365'] = 0
+  PG_2PD = abs(subdata[,'MAR04365'])
+  # 2PD -> PEP
+  which_neg = subdata[,'MAR04363'] < 0
+  subdata[which_neg,'MAR04363'] = 0
+  PD_PEP = subdata[,'MAR04363']
+  # PEP -> pyruvate
+  PEP_pyruvate = subdata[,'MAR04378']
+  # Final Score:
+  final_scores = rowMeans(cbind(glucose_G6P, G6P_F6P, F6P_F16BP, F16BP_GAPDHAP,
+                                DHAP_GAP, GAP_13BPG, BPG_23BG, BG_3PG, BPG_3PG,
+                                PG_2PD, PD_PEP, PEP_pyruvate))
+  names(final_scores) = rownames(subdata)
+  
+  return(final_scores)
+}
+
 
 
 

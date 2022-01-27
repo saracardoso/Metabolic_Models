@@ -351,10 +351,11 @@ density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
                         important_rxns$LDHA, 'LDHA', colour_by=NULL, cts_order=NULL,
                         state_order=NULL)
 
-# OXPHOS:
-density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
-                        as.vector(important_rxns$subsystems$OXPHOS), 'OXPHOS', colour_by=NULL, cts_order=NULL,
-                        state_order=NULL)
+# Glycolysis pathway scores:
+glycolysis_scores = glycolysis_score(sampling_control_data)
+density_pathscores_StateCT(glycolysis_scores, CRCatlas_samplingNMControl_meta,
+                           'Glycolysis', colour_by=NULL, cts_order=NULL,
+                           state_order=NULL)
 
 
 
