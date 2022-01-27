@@ -303,7 +303,7 @@ for(idx in 1:dim(CRCatlas_sampling_dataframe)[1]){
     states = c(states, rep(metadata[sample, 'Sample.Source'], n_samplings))
     cell_types = c(cell_types, rep(cell_type, n_samplings))
     media = c(media, rep(medium_type, n_samplings))
-    row_names = c(row_names, rownms)
+    row_names = c(row_names, samplings)
     
     # Deleting temporary mtx:
     message('- Deleting temporary mtx...')
@@ -329,13 +329,14 @@ write.csv(CRCatlas_samplingNMControl_meta,
 
 sampling_control_data = Matrix::readMM('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_data.mtx')
 CRCatlas_samplingNMControl_meta = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_metadata.csv',
-                                           row.names=1)
+                                           row.names=1, stringsAsFactors=TRUE)
 
 important_rxns = jsonlite::read_json('./GENERAL/utility_data/important_reactions_Tcells.json',
                                      simplifyVector=TRUE)
 
 # Biomass:
-density_rxn_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+regs = CRCatlas_samplingNMControl_meta$cell_type=='Regulatory CD4 Tcells'
+density_rxn_StateCT(sampling_control_data[regs,], CRCatlas_samplingNMControl_meta[regs,],
                     important_rxns$biomass, colour_by=NULL, cts_order=NULL,
                     state_order=NULL)
 
