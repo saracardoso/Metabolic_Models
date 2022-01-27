@@ -21,21 +21,27 @@ CRCatlas_sampling$NormalMatched = list()
 CRCatlas_sampling$NormalMatched[['31']] = list()
 CRCatlas_sampling$NormalMatched[['31']]$control = list()
 CRCatlas_sampling$NormalMatched[['31']]$control$scrEXT001 = c('IL17+ CD4 Tcells', 'Memory CD4 Tcells',
+                                                              'Proliferative CD4 Tcells',
                                                               'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['31']]$control$scrEXT002 = c('Cytotoxic CD8 Tcells',
                                                               'Memory CD4 Tcells',
+                                                              'Naive CD4 Tcells',
                                                               'Proliferative CD8 Tcells',
+                                                              'Regulatory CD4 Tcells',
                                                               'Follicular CD4 Tcells')
-CRCatlas_sampling$NormalMatched[['31']]$control$scrEXT003 = c('Naive CD4 Tcells')
+CRCatlas_sampling$NormalMatched[['31']]$control$scrEXT003 = c('Memory CD4 Tcells', 'Naive CD4 Tcells')
 
 # Patient 32
 CRCatlas_sampling$NormalMatched[['32']] = list()
 CRCatlas_sampling$NormalMatched[['32']]$control = list()
 CRCatlas_sampling$NormalMatched[['32']]$control$scrEXT009 = c('Cytotoxic CD8 Tcells',
-                                                              'IL17+ CD4 Tcells', 'Memory CD8 Tcells',
+                                                              'Follicular CD4 Tcells',
+                                                              'IL17+ CD4 Tcells', 'Memory CD4 Tcells',
+                                                              'Memory CD8 Tcells', 'Naive CD4 Tcells',
                                                               'Naive CD8 Tcells',
                                                               'Proliferative CD4 Tcells',
-                                                              'Proliferative CD8 Tcells')
+                                                              'Proliferative CD8 Tcells',
+                                                              'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['32']]$control$scrEXT010 = c('Cytotoxic CD8 Tcells',
                                                               'Follicular CD4 Tcells',
                                                               'Memory CD4 Tcells',
@@ -51,12 +57,13 @@ CRCatlas_sampling$NormalMatched[['32']]$control$scrEXT011 = c('Cytotoxic CD8 Tce
 # Patient 33
 CRCatlas_sampling$NormalMatched[['33']] = list()
 CRCatlas_sampling$NormalMatched[['33']]$control = list()
-CRCatlas_sampling$NormalMatched[['33']]$control$scrEXT012 = c('Memory CD8 Tcells',
+CRCatlas_sampling$NormalMatched[['33']]$control$scrEXT012 = c('Memory CD4 Tcells', 'Memory CD8 Tcells',
                                                               'Proliferative CD4 Tcells',
                                                               'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['33']]$control$scrEXT013 = c('Memory CD4 Tcells',
                                                               'Naive CD4 Tcells',
-                                                              'Proliferative CD4 Tcells')
+                                                              'Proliferative CD4 Tcells',
+                                                              'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['33']]$control$scrEXT014 = c('IL17+ CD4 Tcells',
                                                               'Memory CD4 Tcells',
                                                               'Memory CD8 Tcells', 'Naive CD4 Tcells')
@@ -74,6 +81,7 @@ CRCatlas_sampling$NormalMatched[['35']]$control$scrEXT019 = c('Follicular CD4 Tc
                                                               'Memory CD4 Tcells',
                                                               'Memory CD8 Tcells',
                                                               'Naive CD4 Tcells',
+                                                              'Proliferative CD4 Tcells',
                                                               'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['35']]$control$scrEXT020 = c('Memory CD8 Tcells', 'Naive CD4 Tcells',
                                                               'Regulatory CD4 Tcells')
@@ -99,8 +107,10 @@ CRCatlas_sampling$NormalMatched[['KUL01']]$control[['KUL01-T']] = c('IL17+ CD4 T
 CRCatlas_sampling$NormalMatched[['KUL19']] = list()
 CRCatlas_sampling$NormalMatched[['KUL19']]$control = list()
 CRCatlas_sampling$NormalMatched[['KUL19']]$control[['KUL19-B']] = c('Cytotoxic CD8 Tcells',
+                                                                    'Follicular CD4 Tcells',
                                                                     'Memory CD4 Tcells',
                                                                     'Memory CD8 Tcells',
+                                                                    'Naive CD4 Tcells',
                                                                     'Naive CD8 Tcells',
                                                                     'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['KUL19']]$control[['KUL19-N']] = c('Cytotoxic CD8 Tcells',
@@ -117,12 +127,16 @@ CRCatlas_sampling$NormalMatched[['KUL19']]$control[['KUL19-T']] = c('Cytotoxic C
 # Patient KUL21
 CRCatlas_sampling$NormalMatched[['KUL21']] = list()
 CRCatlas_sampling$NormalMatched[['KUL21']]$control = list()
-CRCatlas_sampling$NormalMatched[['KUL21']]$control[['KUL21-B']] = c('Memory CD8 Tcells',
-                                                                    'Naive CD4 Tcells')
-CRCatlas_sampling$NormalMatched[['KUL21']]$control[['KUL21-N']] = c('IL17+ CD4 Tcells',
+CRCatlas_sampling$NormalMatched[['KUL21']]$control[['KUL21-B']] = c('Memory CD4 Tcells',
+                                                                    'Memory CD8 Tcells',
                                                                     'Naive CD4 Tcells',
                                                                     'Regulatory CD4 Tcells')
-CRCatlas_sampling$NormalMatched[['KUL21']]$control[['KUL21-T']] = c('Memory CD8 Tcells',
+CRCatlas_sampling$NormalMatched[['KUL21']]$control[['KUL21-N']] = c('IL17+ CD4 Tcells',
+                                                                    'Memory CD4 Tcells',
+                                                                    'Naive CD4 Tcells',
+                                                                    'Regulatory CD4 Tcells')
+CRCatlas_sampling$NormalMatched[['KUL21']]$control[['KUL21-T']] = c('Memory CD4 Tcells',
+                                                                    'Memory CD8 Tcells',
                                                                     'Naive CD4 Tcells',
                                                                     'Regulatory CD4 Tcells')
 
@@ -163,7 +177,8 @@ CRCatlas_sampling$NormalMatched[['SMC06']]$control = list()
 CRCatlas_sampling$NormalMatched[['SMC06']]$control[['SMC06-N']] = c('Memory CD4 Tcells',
                                                                     'Memory CD8 Tcells',
                                                                     'Naive CD4 Tcells',
-                                                                    'Naive CD8 Tcells')
+                                                                    'Naive CD8 Tcells',
+                                                                    'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['SMC06']]$control[['SMC06-T']] = c('Memory CD4 Tcells',
                                                                     'Memory CD8 Tcells',
                                                                     'Naive CD4 Tcells',
@@ -173,11 +188,15 @@ CRCatlas_sampling$NormalMatched[['SMC06']]$control[['SMC06-T']] = c('Memory CD4 
 CRCatlas_sampling$NormalMatched[['SMC07']] = list()
 CRCatlas_sampling$NormalMatched[['SMC07']]$control = list()
 CRCatlas_sampling$NormalMatched[['SMC07']]$control[['SMC07-N']] = c('Memory CD4 Tcells',
-                                                                    'Naive CD4 Tcells')
+                                                                    'Memory CD8 Tcells',
+                                                                    'Naive CD4 Tcells',
+                                                                    'Regulatory CD4 Tcells')
 CRCatlas_sampling$NormalMatched[['SMC07']]$control[['SMC07-T']] = c('Cytotoxic CD8 Tcells',
                                                                     'Follicular CD4 Tcells',
                                                                     'IL17+ CD4 Tcells',
                                                                     'Memory CD4 Tcells',
+                                                                    'Memory CD8 Tcells',
+                                                                    'Naive CD4 Tcells',
                                                                     'Naive CD8 Tcells',
                                                                     'Proliferative CD4 Tcells',
                                                                     'Proliferative CD8 Tcells',
@@ -210,7 +229,8 @@ CRCatlas_sampling$NormalMatched[['SMC10']]$control[['SMC10-T']] = c('Cytotoxic C
                                                                     'Memory CD8 Tcells',
                                                                     'Naive CD4 Tcells',
                                                                     'Proliferative CD4 Tcells',
-                                                                    'Proliferative CD8 Tcells')
+                                                                    'Proliferative CD8 Tcells',
+                                                                    'Regulatory CD4 Tcells')
 
 # Save the list into a json file:
 jsonlite::write_json(CRCatlas_sampling, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/CRCatlas_sampling.json')
@@ -244,7 +264,7 @@ for(idx in 1:dim(CRCatlas_sampling_dataframe)[1]){
           ' ', idx, '/', dim(CRCatlas_sampling_dataframe)[1])
   
   # Sampling data:
-  for(medium_type in c('Blood_SMDB', 'Plasmax_serum')){
+  for(medium_type in c('Blood_SMDB')){
     # Add to list:
     message('| Reading data from medium ', medium_type, '...')
     mtx = Matrix::Matrix(as.matrix(read.csv(paste('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched',
