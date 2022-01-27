@@ -1,3 +1,78 @@
+# Density plots of a reaction flux separated by sample state and cell-type:
+density_rxn_StateCT = function(data, metadata, rxn,
+                               colour_by=NULL, cts_order=NULL,
+                               state_order=NULL){
+  # Create data.frame for plotting:
+  samplings_names = rownames(data)
+  df = cbind(data[samplings_names, rxn], metadata[samplings_names, ])
+  colnames(df)[1] = rxn
+  if(is.null(cts_order)) df$cell_type = factor(df$cell_type,
+                                               levels=unique(df$cell_type))
+  else df$cell_type = factor(df$cell_type, levels=cts_order)
+  if(is.null(state_order)) df$state = factor(df$state, levels=unique(df$state))
+  else df$state = factor(df$state, levels=state_order)
+  if(!is.null(colour_by)) df[,colour_by] = factor(df[,colour_by])
+  
+  # Create plot:
+  if(is.null(colour_by)) plt = ggplot2::ggplot(df, ggplot2::aes_string(rxn))
+  else plt = ggplot2::ggplot(df, ggplot2::aes_string(rxn, colour=colour_by))
+  plt = plt + ggplot2::geom_density() +
+    ggplot2::facet_grid(rows=ggplot2::vars(state),
+                        cols=ggplot2::vars(cell_type))
+  
+  return(plt)
+}
+
+# Density plots of several reactions whose fluxes are summed, separated by
+# sample state and cell-type:
+density_sumrxns_StateCT = function(data, metadata, rxns, rxns_rep,
+                               colour_by=NULL, cts_order=NULL,
+                               state_order=NULL, abs=FALSE){
+  # Create data.frame for plotting:
+  samplings_names = rownames(data)
+  if(abs) aggregated_fluxes = Matrix::rowMeans(abs(data[samplings_names, rxns]))
+  else aggregated_fluxes = Matrix::rowMeans(data[samplings_names, rxns])
+  df = cbind(aggregated_fluxes, metadata[samplings_names, ])
+  colnames(df)[1] = rxns_rep
+  if(is.null(cts_order)) df$cell_type = factor(df$cell_type,
+                                               levels=unique(df$cell_type))
+  else df$cell_type = factor(df$cell_type, levels=cts_order)
+  if(is.null(state_order)) df$state = factor(df$state, levels=unique(df$state))
+  else df$state = factor(df$state, levels=state_order)
+  
+  # Create plot:
+  if(is.null(colour_by)) plt = ggplot2::ggplot(df, ggplot2::aes_string(rxns_rep))
+  else plt = ggplot2::ggplot(df, ggplot2::aes_string(rxns_rep, colour=colour_by))
+  plt = plt + ggplot2::geom_density() +
+    ggplot2::facet_grid(rows=ggplot2::vars(state),
+                        cols=ggplot2::vars(cell_type))
+  
+  return(plt)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ---------------------------------------------------------------------------
+
+
 # Histogram plot for the reaction's fluxes from a sampling result
 histogram_sampling = function(sampling_result, reaction){
   plot = ggplot2::ggplot(sampling_result, ggplot2::aes(reaction)) +
@@ -59,9 +134,7 @@ umap_sampling = function(sampling_results){
 # shape_meta: metadata variable to shape the samples by
 plot_umap = function(umap_result, colour_meta, shape_meta=NULL){ 
   # numeric data is: UMAP_1: umap_result$layout[,1]; UMAP_2: umap_result$layout[,2]
-  df_umap = data.frame(UMAP_1 = umap_result$layout[,1], UMAP_2 = umap_result$layout[,2])
-  df_umap = cbind(df_umap, metadata)
-  plt = ggplot2::ggplot(df_umap, ggplot2::aes(UMAP_1, UMAP_2))
+  plt = ggplot2::ggplot(umap_result, ggplot2::aes(UMAP_1, UMAP_2))
   if(!is.null(shape_meta)) 
     plt = plt + ggplot2::geom_point(ggplot2::aes_string(colour=colour_meta, shape=shape_meta))
   else plt = plt + ggplot2::geom_point(ggplot2::aes_string(colour=colour_meta))

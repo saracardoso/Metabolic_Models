@@ -1,6 +1,11 @@
 code_dir = './GENERAL/code/R'
 for(file in list.files(code_dir, full.names=TRUE)) source(file)
 
+HumanGEM_rxns_subsystems = jsonlite::read_json('./GENERAL/utility_data/reactions_subsystems_mapping.json',
+                                               simplifyVector = TRUE)
+HumanGEM_subsystems_rxns = jsonlite::read_json('./GENERAL/utility_data/subsystems_reactions_mapping.json',
+                                               simplifyVector = TRUE)
+
 
 
 # ---------------
@@ -319,7 +324,44 @@ write.csv(CRCatlas_samplingNMControl_meta,
 
 
 # -----
-# --- Pre-Process data for analysis
+# --- Compare important reactions between cell-types + state (e.g. naiveCD4_normal)
+# -----
+
+sampling_control_data = Matrix::readMM('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_data.mtx')
+CRCatlas_samplingNMControl_meta = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_metadata.csv',
+                                           row.names=1)
+
+important_rxns = jsonlite::read_json('./GENERAL/utility_data/important_reactions_Tcells.json',
+                                     simplifyVector=TRUE)
+
+# Biomass:
+density_rxn_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                    important_rxns$biomass, colour_by=NULL, cts_order=NULL,
+                    state_order=NULL)
+
+# SLC7A5:
+density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                        important_rxns$uptakes$SLC7A5, 'SLC7A5',
+                        colour_by=NULL, cts_order=NULL, state_order=NULL,
+                        abs=T)
+
+# LDHA:
+density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                        important_rxns$LDHA, 'LDHA', colour_by=NULL, cts_order=NULL,
+                        state_order=NULL)
+
+# OXPHOS:
+density_sumrxns_StateCT(sampling_control_data, CRCatlas_samplingNMControl_meta,
+                        as.vector(important_rxns$subsystems$OXPHOS), 'OXPHOS', colour_by=NULL, cts_order=NULL,
+                        state_order=NULL)
+
+
+
+
+
+
+# -----
+# --- Pre-Process data for differential and PCA analyses
 # -----
 
 # Read matrix:
@@ -329,9 +371,9 @@ sampling_control_data = Matrix::readMM('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/N
 sampling_control_data = Matrix::t(sampling_control_data)
 # Now it is reactions vs samplings, i.e., features vs samples.
 
-# Remove reactions with 0 flux in more than 10 samplings
+# Remove reactions with non-zero flux in less than 100 samplings
 nonzero = sampling_control_data > 0
-keep_rxns = Matrix::rowSums(nonzero) >= 10
+keep_rxns = Matrix::rowSums(nonzero) >= 100
 sampling_control_data = sampling_control_data[keep_rxns, ]
 remove(nonzero)
 invisible(gc())
@@ -343,10 +385,11 @@ norm_factors = Matrix::colSums(sampling_control_data)
 sampling_control_dataNorm = Matrix::Matrix(t(apply(sampling_control_data, 1,
                                                    function(x) x/norm_factors)),
                                            sparse=T)
+invisible(gc())
 # Calculate reactions means, variances
 rxn_means = Matrix::rowMeans(sampling_control_dataNorm)
-rxn_vars = Seurat::SparseRowVar2(mat=sampling_control_dataNorm,
-                                 mu=rxn_means, display_progress=T)
+rxn_vars = Seurat:::SparseRowVar2(mat=sampling_control_dataNorm,
+                                  mu=rxn_means, display_progress=T)
 # Standardized variance values must be maximum clip.max.
 # Those bigger than clip.max will be set to clip.max
 clip.max = sqrt(ncol(sampling_control_dataNorm))
@@ -356,28 +399,34 @@ rxns_notConst = rxn_vars > 0
 data.loess.info = data.frame(mean=rxn_means, variance=rxn_vars,
                         variance.expected=0, variance.standardized=0)
 loess.fit = loess(formula=log10(rxn_vars) ~ log10(rxn_means),
-                  data=data.loess.info, span=loess.span)
+                  data=data.loess.info, span=0.3)
 # Save fit results in data.loess.info
 data.loess.info$variance.expected[rxns_notConst] <- 10 ^ loess.fit$fitted
 data.loess.info$variance.standardized = 
-  SparseRowVarStd(mat=object, mu=data.loess.info$mean,
-                  sd=sqrt(data.loess.info$variance.expected),
-                  vmax=clip.max, display_progress=verbose)
+  Seurat:::SparseRowVarStd(mat=sampling_control_dataNorm, mu=data.loess.info$mean,
+                           sd=sqrt(data.loess.info$variance.expected),
+                           vmax=clip.max, display_progress=T)
 # Get top 2 000 most variable reactions
 data.loess.info = data.loess.info[which(data.loess.info[, 1, drop=TRUE]!=0), ]
-data.loess.info = data.loess.info[order(data.loess.info$vst.variance.standardized,
+data.loess.info = data.loess.info[order(data.loess.info$variance.standardized,
                                         decreasing=TRUE), , drop=FALSE]
 top_rxns = head(rownames(data.loess.info), n=2000)
 
 # Filter raw matrix to have only the highly variable reactions
 sampling_control_data = sampling_control_data[top_rxns, ]
+invisible(gc())
 
 # Scale raw matrix to for mean = 0 and variance = 1
 sampling_control_dataScaled = scale(sampling_control_data)
 
+#sampling_control_AllDataScaled = scale(Matrix::t(sampling_control_data_original))
+
+# BATCH CORRECTION FOR DATASETS? WHERE IN THE PROCESSING PIPELINE?
+
 # Save scaled data
 Matrix::writeMM(sampling_control_dataScaled,
                 './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/sampling_control_dataScaled.mtx')
+
 
 
 
@@ -390,32 +439,157 @@ Matrix::writeMM(sampling_control_dataScaled,
 pca.results = irlba::irlba(A=t(sampling_control_dataScaled), nv=50)
 rxn_embeddings = pca.results$u %*% diag(pca.results$d)
 
+pca_plot_df = cbind(rxn_embeddings[,1:2], CRCatlas_samplingNMControl_meta)
+colnames(pca_plot_df)[1:2] = c('PCA1', 'PCA2')
+plt = ggplot2::ggplot(pca_plot_df, ggplot2::aes(PCA1, PCA2))
+plt + ggplot2::geom_point(ggplot2::aes_string(colour='cell_type'))
+plt + ggplot2::geom_point(ggplot2::aes_string(colour='medium'))
+plt + ggplot2::geom_point(ggplot2::aes_string(colour='sample'))
+
 # Where components start to elbow
-stdev = pca.results$d/sqrt(max(1, ncol(object) - 1))
-pct = stdev / sum(stdev) * 100
-cumu = cumsum(pct)
-co1 = which(cumu > 90 & pct < 5)[1]
-co2 = sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
-elbow = min(co1, co2)
-plot_df = data.frame(pct=pct, cumu=cumu, rank=1:length(pct))
-ggplot2::ggplot(plot_df, ggplot2::aes(cumu, pct, label = rank, color = rank > elbow)) + 
-  ggplot2::geom_text() + 
-  ggplot2::geom_vline(xintercept = 90, color = "grey") + 
-  ggplot2::geom_hline(yintercept = min(pct[pct > 5]), color = "grey") +
-  ggplot2::theme_bw()
-
+#stdev = pca.results$d/sqrt(max(1, ncol(sampling_control_dataScaled) - 1))
+#pct = stdev / sum(stdev) * 100
+#cumu = cumsum(pct)
+#co1 = which(cumu > 90 & pct < 5)[1]
+#co2 = sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
+#elbow = min(co1, co2)
+#plot_df = data.frame(pct=pct, cumu=cumu, rank=1:length(pct))
+#ggplot2::ggplot(plot_df, ggplot2::aes(cumu, pct, label = rank, color = rank > elbow)) + 
+#  ggplot2::geom_text() + 
+#  ggplot2::geom_vline(xintercept = 90, color = "grey") + 
+#  ggplot2::geom_hline(yintercept = min(pct[pct > 5]), color = "grey") +
+#  ggplot2::theme_bw()
+#
 # UMAP
-CRCatlas_samplingNMControl_umap = uwot::umap(NULL,
-                                             nn_method=rxn_embeddings[,1:elbow],
-                                             n_threads=future::nbrOfWorkers(),
-                                             metric='cosine', verbose = TRUE)
-
+#CRCatlas_samplingNMControl_umap = uwot::umap(rxn_embeddings[,1:elbow],
+#                                             n_neighbors = 30, init='spectral',
+#                                             metric='cosine', verbose = TRUE)
+#
 # Plots of result
-df_umapPlot = cbind(CRCatlas_samplingNMControl_umap,
-                    CRCatlas_samplingNMControl_meta)
-plot_umap(df_umapPlot, '')
+#colnames(CRCatlas_samplingNMControl_umap) = c('UMAP_1', 'UMAP_2')
+#df_umapPlot = cbind(CRCatlas_samplingNMControl_umap,
+#                    CRCatlas_samplingNMControl_meta)
+#plot_umap(df_umapPlot, 'cell_type', 'medium')
+#plot_umap(df_umapPlot, 'medium')
+#plot_umap(df_umapPlot, 'sample')
 
 
 
+
+# -----
+# --- Differential Flux Analysis
+# -----
+
+# Reactions whose fluxes are significantly different between a cell-type and 
+# all others, for each medium
+
+ct_results = list()
+for(medium in c('blood', 'plasmax')){
+  message(medium)
+  ct_results[[medium]] = c()
+  for(ct in unique(CRCatlas_samplingNMControl_meta$cell_type)){
+    message('-',ct)
+    medium_samplings = CRCatlas_samplingNMControl_meta$medium==medium
+    ct_medium_samplings = CRCatlas_samplingNMControl_meta$cell_type==ct & medium_samplings
+    other_medium_samplings = CRCatlas_samplingNMControl_meta$cell_type!=ct & medium_samplings
+    # - Only consider reactions whose |log2(fold change)| is higher than 1
+    ct_rxns_means = rowMeans(sampling_control_dataScaled[,ct_medium_samplings])
+    other_rxns_means = rowMeans(sampling_control_dataScaled[,other_medium_samplings])
+    fc = ct_rxns_means - other_rxns_means
+    names(fc) = row.names(sampling_control_dataScaled)
+    rxns_toTest = names(fc)[fc>1]
+    # - For those reactions, find the ones that are significantly different
+    test_meta1 = CRCatlas_samplingNMControl_meta$cell_type
+    test_meta1 = data.frame(cell_type=test_meta1[medium_samplings],
+                            row.names=colnames(sampling_control_dataScaled)[medium_samplings])
+    test_meta1$cell_type[test_meta1$cell_type!=ct] = 'other'
+    p_val = sapply(rxns_toTest,
+      FUN = function(x) {
+        return(wilcox.test(sampling_control_dataScaled[x, medium_samplings] ~ test_meta1[, "cell_type"])$p.value)
+      }
+    )
+    pval_adjust = p.adjust(p_val, method='fdr')
+    res_ct = data.frame(reaction=rxns_toTest, pval_adjust,
+                        fold_change=fc[rxns_toTest], pval=p_val,
+                        cell_type=ct, row.names=paste(rxns_toTest, ct, sep='_'))
+    ct_results[[medium]] = rbind(ct_results[[medium]], res_ct)
+  }
+}
+
+# ----------------------------------------------------------------------------
+# Visualize differential reactions
+rxn = 'MAR07881'
+ct = 'foll'
+ct_samplings = CRCatlas_samplingNMControl_meta$cell_type==ct
+df = data.frame(reaction=sampling_control_dataScaled[rxn, ],
+                cell_type=CRCatlas_samplingNMControl_meta$cell_type)
+df$cell_type = factor(df$cell_type, levels=unique(df$cell_type))
+ggplot2::ggplot(df, ggplot2::aes(reaction, colour=cell_type)) +
+  ggplot2::geom_density() + 
+  ggplot2::geom_vline(xintercept=mean(sampling_control_dataScaled[rxn,ct_samplings]), colour='red',
+                      linetype='dashed') +
+  ggplot2::geom_vline(xintercept=mean(sampling_control_dataScaled[rxn,!ct_samplings]), colour='gray',
+                      linetype='dashed') +
+  ggplot2::xlab(rxn)
+
+# Ordered list of subsystems with most amount of significant reactions
+ct='prolCD8'
+significant_rxns = ct_results$reaction[ct_results$pval_adjust < 0.01 & ct_results$cell_type==ct]
+sort(table(unlist(HumanGEM_rxns_subsystems[significant_rxns])))
+
+all_significant_rxns = unique(ct_results$reaction)
+subsystems_annotation = unlist(HumanGEM_rxns_subsystems[all_significant_rxns])
+heatmapData = c()
+for(ct in unique(CRCatlas_samplingNMControl_meta$cell_type)){
+  ct_rxns_means = rowMeans(sampling_control_dataScaled[all_significant_rxns, CRCatlas_samplingNMControl_meta$cell_type==ct])
+  other_rxns_means = rowMeans(sampling_control_dataScaled[all_significant_rxns, CRCatlas_samplingNMControl_meta$cell_type!=ct])
+  fc = ct_rxns_means - other_rxns_means
+  heatmapData = cbind(heatmapData, fc)
+}
+colnames(heatmapData) = unique(CRCatlas_samplingNMControl_meta$cell_type)
+heatmapmatrix = as.matrix(heatmapData)
+simple_subsystems_annotation = sapply(subsystems_annotation, function(x) strsplit(x, ' [(]')[[1]][1])
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+top10_represented_subsystems = names(sort(table(simple_subsystems_annotation), decreasing=T)[2:10])
+row_annot=ComplexHeatmap::rowAnnotation(subsystem=simple_subsystems_annotation[simple_subsystems_annotation%in%top10_represented_subsystems])
+ComplexHeatmap::Heatmap(heatmapmatrix[simple_subsystems_annotation%in%top10_represented_subsystems,],
+                        right_annotation = row_annot, row_split = simple_subsystems_annotation[simple_subsystems_annotation%in%top10_represented_subsystems],
+                        cluster_columns=FALSE, cluster_rows=TRUE,
+                        show_column_names=TRUE, show_row_names=FALSE)
+
+
+#rand_samps = sort(sample(1:10000, 5000))
+#col_annot=ComplexHeatmap::HeatmapAnnotation(cell_type=CRCatlas_samplingNMControl_meta$cell_type[rand_samps])
+#ht1 = ComplexHeatmap::Heatmap(as.matrix(sampling_control_data[res$pval_adjust<0.01, rand_samps]),
+#                              cluster_columns=FALSE, cluster_rows=TRUE,
+#                              column_split=CRCatlas_samplingNMControl_meta$cell_type[rand_samps],
+#                              show_column_names=FALSE, show_row_names=FALSE,
+#                              top_annotation=col_annot)
+#ht1 = ComplexHeatmap::draw(ht1)
+#rowOrder = ComplexHeatmap::row_order(ht1)
+#
+#col_annot=ComplexHeatmap::HeatmapAnnotation(cell_type=CRCatlas_samplingNMControl_meta$cell_type[rand_samps])
+#ComplexHeatmap::Heatmap(as.matrix(sampling_control_dataScaled[res$pval_adjust<0.01, rand_samps]),
+#                        cluster_columns=FALSE, cluster_rows=TRUE, row_order=rowOrder,
+#                        column_split=CRCatlas_samplingNMControl_meta$cell_type[rand_samps],
+#                        show_column_names=FALSE, show_row_names=FALSE,
+#                        top_annotation=col_annot)
+#
+#
+#
+#smaller_than250 = sampling_control_data < 100 & sampling_control_data > -100
+#rxns_smaller_than250 = Matrix::rowSums(smaller_than250) >= 9000
+#col_annot=ComplexHeatmap::HeatmapAnnotation(cell_type=CRCatlas_samplingNMControl_meta$cell_type[rand_samps])
+#ComplexHeatmap::Heatmap(as.matrix(sampling_control_data[res$pval_adjust<0.01 & rxns_smaller_than250, rand_samps]),
+#                        cluster_columns=FALSE, cluster_rows=TRUE,
+#                        column_split=CRCatlas_samplingNMControl_meta$cell_type[rand_samps],
+#                        show_column_names=FALSE, show_row_names=FALSE,
+#                        top_annotation=col_annot)
+# ----------------------------------------------------------------------------
+
+
+# Reactions whose fluxes are significantly different between the two media,
+# for each cell-type
 
 
