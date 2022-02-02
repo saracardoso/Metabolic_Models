@@ -38,7 +38,7 @@ if __name__ == '__main__':
         # Get files that starts with 02_
         indiv_samples = [file for file in listdir(join(CRCReconstructionNormalMatched_dir, indiv))
                          if file.startswith('02_')]
-        for samp in ['02_SMC10-N.obj']:# indiv_samples:
+        for samp in indiv_samples:
             samp_name = samp.replace('.obj', '').replace('02_', '')
             print('- ', samp_name)
             with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
