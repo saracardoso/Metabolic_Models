@@ -785,7 +785,273 @@ infoDF = data.frame(PC1=seurat_control_memcd8@reductions$pca@cell.embeddings[,'P
                     individual=seurat_control_memcd8$individual, state=seurat_control_memcd8$state)
 write.csv(infoDF, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/memcd8_samplings_reductions.csv')
 
+# 8.6. Naive CD4 Tcells
+seurat_control_naivecd4 = subset(seurat_control, cells=rownames(seurat_control[[]])[seurat_control$cell_type=='Naive CD4 Tcells'])
+invisible(gc())
+# 8.6.1. Run PCA
+seurat_control_naivecd4 = Seurat::RunPCA(seurat_control_naivecd4, features = Seurat::VariableFeatures(seurat_control_naivecd4))
+invisible(gc())
+# 8.6.2. PCA plots coloured by cell-types, state and individuals
+Seurat::DimPlot(seurat_control_naivecd4, reduction='pca', group.by='state', cols=state_colors)/
+  Seurat::DimPlot(seurat_control_naivecd4, reduction='pca', group.by='individual', cols=individual_colors)
+# 8.6.3. Save dataframe with PCA information
+infoDF = data.frame(PC1=seurat_control_naivecd4@reductions$pca@cell.embeddings[,'PC_1'],
+                    PC2=seurat_control_naivecd4@reductions$pca@cell.embeddings[,'PC_2'],
+                    individual=seurat_control_naivecd4$individual, state=seurat_control_naivecd4$state)
+write.csv(infoDF, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/naivecd4_samplings_reductions.csv')
 
+# 8.7. Naive CD8 Tcells
+seurat_control_naivecd8 = subset(seurat_control, cells=rownames(seurat_control[[]])[seurat_control$cell_type=='Naive CD8 Tcells'])
+invisible(gc())
+# 8.7.1. Run PCA
+seurat_control_naivecd8 = Seurat::RunPCA(seurat_control_naivecd8, features = Seurat::VariableFeatures(seurat_control_naivecd8))
+invisible(gc())
+# 8.7.2. PCA plots coloured by cell-types, state and individuals
+Seurat::DimPlot(seurat_control_naivecd8, reduction='pca', group.by='state', cols=state_colors)/
+  Seurat::DimPlot(seurat_control_naivecd8, reduction='pca', group.by='individual', cols=individual_colors)
+# 8.7.3. Save dataframe with PCA information
+infoDF = data.frame(PC1=seurat_control_naivecd8@reductions$pca@cell.embeddings[,'PC_1'],
+                    PC2=seurat_control_naivecd8@reductions$pca@cell.embeddings[,'PC_2'],
+                    individual=seurat_control_naivecd8$individual, state=seurat_control_naivecd8$state)
+write.csv(infoDF, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/naivecd8_samplings_reductions.csv')
+
+# 8.8. Proliferative CD4 Tcells
+seurat_control_prolcd4 = subset(seurat_control, cells=rownames(seurat_control[[]])[seurat_control$cell_type=='Proliferative CD4 Tcells'])
+invisible(gc())
+# 8.8.1. Run PCA
+seurat_control_prolcd4 = Seurat::RunPCA(seurat_control_prolcd4, features = Seurat::VariableFeatures(seurat_control_prolcd4))
+invisible(gc())
+# 8.8.2. PCA plots coloured by cell-types, state and individuals
+Seurat::DimPlot(seurat_control_prolcd4, reduction='pca', group.by='state', cols=state_colors)/
+  Seurat::DimPlot(seurat_control_prolcd4, reduction='pca', group.by='individual', cols=individual_colors)
+# 8.8.3. Save dataframe with PCA information
+infoDF = data.frame(PC1=seurat_control_prolcd4@reductions$pca@cell.embeddings[,'PC_1'],
+                    PC2=seurat_control_prolcd4@reductions$pca@cell.embeddings[,'PC_2'],
+                    individual=seurat_control_prolcd4$individual, state=seurat_control_prolcd4$state)
+write.csv(infoDF, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/prolcd4_samplings_reductions.csv')
+
+# 8.9. Proliferative CD8 Tcells
+seurat_control_prolcd8 = subset(seurat_control, cells=rownames(seurat_control[[]])[seurat_control$cell_type=='Proliferative CD8 Tcells'])
+invisible(gc())
+# 8.9.1. Run PCA
+seurat_control_prolcd8 = Seurat::RunPCA(seurat_control_prolcd8, features = Seurat::VariableFeatures(seurat_control_prolcd8))
+invisible(gc())
+# 8.9.2. PCA plots coloured by cell-types, state and individuals
+Seurat::DimPlot(seurat_control_prolcd8, reduction='pca', group.by='state', cols=state_colors)/
+  Seurat::DimPlot(seurat_control_prolcd8, reduction='pca', group.by='individual', cols=individual_colors)
+# 8.9.3. Save dataframe with PCA information
+infoDF = data.frame(PC1=seurat_control_prolcd8@reductions$pca@cell.embeddings[,'PC_1'],
+                    PC2=seurat_control_prolcd8@reductions$pca@cell.embeddings[,'PC_2'],
+                    individual=seurat_control_prolcd8$individual, state=seurat_control_prolcd8$state)
+write.csv(infoDF, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/prolcd8_samplings_reductions.csv')
+
+# 8.9. Regulatory CD4 Tcells
+seurat_control_regcd4 = subset(seurat_control, cells=rownames(seurat_control[[]])[seurat_control$cell_type=='Regulatory CD4 Tcells'])
+invisible(gc())
+# 8.9.1. Run PCA
+seurat_control_regcd4 = Seurat::RunPCA(seurat_control_regcd4, features = Seurat::VariableFeatures(seurat_control_regcd4))
+invisible(gc())
+# 8.9.2. PCA plots coloured by cell-types, state and individuals
+Seurat::DimPlot(seurat_control_regcd4, reduction='pca', group.by='state', cols=state_colors)/
+  Seurat::DimPlot(seurat_control_regcd4, reduction='pca', group.by='individual', cols=individual_colors)
+# 8.9.3. Save dataframe with PCA information
+infoDF = data.frame(PC1=seurat_control_regcd4@reductions$pca@cell.embeddings[,'PC_1'],
+                    PC2=seurat_control_regcd4@reductions$pca@cell.embeddings[,'PC_2'],
+                    individual=seurat_control_regcd4$individual, state=seurat_control_regcd4$state)
+write.csv(infoDF, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/regcd4_samplings_reductions.csv')
+
+
+
+
+
+# -----
+# --- Density plot of relevant paths for nive and proliferative cells
+# -----
+
+important_rxns = jsonlite::read_json('./GENERAL/utility_data/important_reactions_Tcells.json',
+                                     simplifyVector=TRUE)
+naive_prol = seurat_control$cell_type%in%c('Naive CD4 Tcells', 'Naive CD8 Tcells', 'Proliferative CD4 Tcells', 'Proliferative CD8 Tcells')
+
+# 1. Glycolysis:
+glycolysis_rxns = c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379',
+                    'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04372',
+                    'MAR04368', 'MAR04370', 'MAR04365', 'MAR04363', 'MAR04378')
+plts=list()
+for(rxn in glycolysis_rxns){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, naive_prol], cell_type=seurat_control$cell_type[naive_prol])
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 2. Pyruvate to lactate vs pyruvte to acetyl-CoA:
+pyrConsumption_rxns = c('MAR04388', 'MAR04137')
+plts=list()
+for(rxn in pyrConsumption_rxns){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, naive_prol], cell_type=seurat_control$cell_type[naive_prol])
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=1)
+
+# 3. OXPHOS:
+oxphos_rxns = c('MAR06921', 'MAR06911', 'MAR06918', 'MAR06914', 'MAR13081', 'MAR06916')
+plts=list()
+for(rxn in oxphos_rxns){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, naive_prol], cell_type=seurat_control$cell_type[naive_prol])
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 4. TCA:
+tca_rxns = c('MAR04145', 'MAR04458', 'MAR04589', 'MAR03957', 'MAR03958', 'MAR04588', 'MAR04112',
+             'MAR05297', 'MAR04209', 'MAR06413', 'MAR06411', 'MAR06414', 'MAR03787', 'MAR04147',
+             'MAR04152', 'MAR04652', 'MAR08743', 'MAR04410', 'MAR04141', 'MAR04145')
+plts=list()
+for(rxn in tca_rxns){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, naive_prol], cell_type=seurat_control$cell_type[naive_prol])
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 5. FAS
+#col_annot = ComplexHeatmap::columnAnnotation(Cell_Type=seurat_control$cell_type[cells_use],
+#                                             State=seurat_control$state[cells_use],
+#                                             Individual=seurat_control$individual[cells_use],
+#                                             col=list(Cell_Type=ct_colors, State=state_colors,
+#                                                      Individual=individual_colors))
+#FAS_reactions = important_rxns$subsystems$`Fatty acid biosynthesis`[as.vector(important_rxns$subsystems$`Fatty acid biosynthesis`)%in%rownames(seurat_control@assays$RNA@counts)]
+#ComplexHeatmap::Heatmap(as.matrix(seurat_control@assays$RNA@counts[FAS_reactions, cells_use]),
+#                       bottom_annotation=col_annot,
+#                        col=circlize::colorRamp2(c(-1,0,1), c('blue', 'white', 'red')),
+#                        column_split=seurat_control$cell_type[cells_use], column_title=NULL,
+#                        cluster_columns=FALSE, cluster_rows=TRUE,
+#                        show_column_names=FALSE, show_row_names=FALSE)
+#
+
+# 6. Glutaminolysis
+glutaminolysis_reactions = c('MAR03892', 'MAR03827', 'MAR04109', 'MAR03802', 'MAR03804')
+plts=list()
+for(rxn in glutaminolysis_reactions){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, naive_prol], cell_type=seurat_control$cell_type[naive_prol])
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 7. BCAA catabolism
+plts=list()
+for(rxn in important_rxns$subsystems$`Branched-chain amino acids (BCAA) catabolism`){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, naive_prol], cell_type=seurat_control$cell_type[naive_prol])
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 8. Glucose in PPP
+plts=list()
+glucose_in_PPP = c('MAR04306', 'MAR08971')
+for(rxn in glucose_in_PPP){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, ], cell_type=seurat_control$cell_type)
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=2)
+
+# 9. Creation of precursors for purines, pyrimidines
+plts=list()
+purine_pyrimidine_precursors = c('MAR04038', 'MAR04577')
+for(rxn in purine_pyrimidine_precursors){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, ], cell_type=seurat_control$cell_type)
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=2)
+
+# 10. Protein synthesis
+df = data.frame(reaction=seurat_control@assays$RNA@counts['MAR13078', ], cell_type=seurat_control$cell_type)
+ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+  ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+  ggplot2::theme(legend.position = 'none') + ggplot2::xlab('MAR13078') + ggplot2::ylab('')
+
+# 11. GLUT1
+plts=list()
+for(rxn in important_rxns$uptakes$GLUT1){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, ], cell_type=seurat_control$cell_type)
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 12. HK2
+plts=list()
+for(rxn in important_rxns$HK2){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, ], cell_type=seurat_control$cell_type)
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+# 13. FPK1 and FPK2
+df = data.frame(reaction=seurat_control@assays$RNA@counts['MAR04379', ], cell_type=seurat_control$cell_type)
+ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+  ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+  ggplot2::theme(legend.position = 'none') + ggplot2::xlab('MAR04379') + ggplot2::ylab('')
+
+# 14. MCT1
+df = data.frame(reaction=seurat_control@assays$RNA@counts['MAR01517', ], cell_type=seurat_control$cell_type)
+ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+  ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+  ggplot2::theme(legend.position = 'none') + ggplot2::xlab('MAR01517') + ggplot2::ylab('')
+
+# 15. LDHA
+plts=list()
+for(rxn in important_rxns$LDHA){
+  message(rxn)
+  df = data.frame(reaction=seurat_control@assays$RNA@counts[rxn, ], cell_type=seurat_control$cell_type)
+  plts[[rxn]]=ggplot2::ggplot(df, ggplot2::aes(reaction, y=..scaled.., colour=cell_type)) +
+    ggplot2::geom_density(adjust=.1) + ggplot2::scale_colour_manual(values=ct_colors) +
+    ggplot2::theme(legend.position = 'none') + ggplot2::xlab(rxn) + ggplot2::ylab('')
+}
+patchwork::wrap_plots(plts, ncol=3)
+
+
+
+
+
+pcor = cor(as.matrix(Matrix::t(seurat_control@assays$RNA@counts)), method='pearson')
+write.csv(pcor, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/correlation.csv')
+
+x=which(pcor>0.9, arr.ind=T)
+x[x[,1]<x[,2],]
+
+x2=which(pcor<(-0.9), arr.ind=T)
+x2[x2[,1]<x2[,2],]
+
+ComplexHeatmap::Heatmap(pcor, cluster_columns=FALSE, cluster_rows=FALSE,
+                        show_column_names=FALSE, show_row_names=FALSE)
 
 
 
