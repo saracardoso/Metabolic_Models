@@ -29,7 +29,11 @@ glycolysis_fluxes_graph = function(rxn_fluxes, main=''){
     else if(rxn%in%c('MAR04368', 'MAR04388') & rxn_fluxes[rxn]<0) glycolysis_edges$color[glycolysis_edges$from==rxn | glycolysis_edges$to==rxn] = 'red'
 }
 visNetwork::visNetwork(rbind(glycolysis_metabs, glycolysis_rxns),
+<<<<<<< HEAD
                        glycolysis_edges, main=main)
+=======
+                       glycolysis_edges, main=main, width='100%')
+>>>>>>> 9c81f06909ac386476c0e12ba42b497b02b670ed
 }
 
 
@@ -65,7 +69,11 @@ tca_fluxes_graph = function(rxn_fluxes, main=''){
     else if(rxn%in%c('MAR04589', 'MAR04152', 'MAR04410', 'MAR06414') & rxn_fluxes[rxn]<0) tca_edges$color[tca_edges$from==rxn | tca_edges$to==rxn] = 'red'
   }
   visNetwork::visNetwork(rbind(tca_metabs, tca_rxns),
+<<<<<<< HEAD
                          tca_edges, main=main)
+=======
+                         tca_edges, main=main, width='100%')
+>>>>>>> 9c81f06909ac386476c0e12ba42b497b02b670ed
 }
 
 
@@ -100,7 +108,11 @@ glutaminolysis_fluxes_graph = function(rxn_fluxes, main=''){
     }
   }
   visNetwork::visNetwork(rbind(glutaminolysis_metabs, glutaminolysis_rxns),
+<<<<<<< HEAD
                          glutaminolysis_edges, main=main)
+=======
+                         glutaminolysis_edges, main=main, width='100%')
+>>>>>>> 9c81f06909ac386476c0e12ba42b497b02b670ed
 }
 
 
@@ -133,7 +145,11 @@ oxphos_fluxes_graph = function(rxn_fluxes, main=''){
     else if(rxn%in%c('MAR06911') & rxn_fluxes[rxn]<0) oxphos_edges$color[oxphos_edges$from==rxn | oxphos_edges$to==rxn] = 'red'
   }
   visNetwork::visNetwork(rbind(oxphos_metabs, oxphos_rxns),
+<<<<<<< HEAD
                          oxphos_edges, main=main)
+=======
+                         oxphos_edges, main=main, width='100%')
+>>>>>>> 9c81f06909ac386476c0e12ba42b497b02b670ed
 }
 
 
