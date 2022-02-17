@@ -7,7 +7,7 @@ if __name__ == '__main__':
     from gc import collect
     from pandas import read_csv
 
-    from GENERAL.code.python.Sampling import sampling
+    from GENERAL.code.python.Validation import sampling
 
     '''
     Directories and files
