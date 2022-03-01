@@ -1,19 +1,19 @@
 # --------------
 # - Glycolysis -
 # --------------
-glycolysis_rxns = data.frame(id=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04372', 'MAR04368', 'MAR04370', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388'),
-                              label=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04372', 'MAR04368', 'MAR04370', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388'),
-                              shape='box', shadow='FALSE', color.background=c(rep('lightgrey', 15), 'thistle', rep('lightgrey', 2)),
+glycolysis_rxns = data.frame(id=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04372', 'MAR04368', 'MAR04370', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388', 'MAR07745', 'MAR04396', 'MAR04377', 'MAR04360', 'MAR04171', 'MAR04193', 'MAR04210', 'MAR04421', 'MAR04573', 'MAR06627', 'MAR04486', 'MAR04487', 'MAR08585'),
+                              label=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04372', 'MAR04368', 'MAR04370', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388', 'MAR07745', 'MAR04396', 'MAR04377', 'MAR04360', 'MAR04171', 'MAR04193', 'MAR04210', 'MAR04421', 'MAR04573', 'MAR06627', 'MAR04486', 'MAR04487', 'MAR08585'),
+                              shape='box', shadow='FALSE', color.background=c(rep('lightgrey', 15), 'thistle', rep('lightgrey', 15)),
                               color.border='black', font.color='black', font.size=20)
-glycolysis_metabs = data.frame(id=c('MAM01965c', 'MAM01968c', 'MAM01845c', 'MAM01841c', 'MAM01690c', 'MAM01939c', 'MAM00247c', 'MAM00569c', 'MAM00913c', 'MAM00674c', 'MAM02696c', 'MAM02819c', 'MAM02819m', 'MAM01261m', 'MAM02403c'),
-                               label=c('glucose', 'glucose-6-phosphate', 'fructose-6-phosphate', 'fructose-1,6-bisphosphate', 'DHAP', 'GAP', '1,3-bisphospho-D-glycerate', '2,3-bisphospho-D-glycerate', '3-phospho-D-glycerate', '2-phospho-D-glycerate', 'PEP', 'pyruvate', 'pyruvate', 'acetyl-CoA', 'lactate'),
-                               shape='ellipse', shadow='TRUE', color.background=c(rep('lightblue', 12), rep('gold', 2), 'lightblue'),
+glycolysis_metabs = data.frame(id=c('MAM01965c', 'MAM01968c', 'MAM01845c', 'MAM01841c', 'MAM01690c', 'MAM01939c', 'MAM00247c', 'MAM00569c', 'MAM00913c', 'MAM00674c', 'MAM02696c', 'MAM02819c', 'MAM02819m', 'MAM01261m', 'MAM02403c', 'MAM01388c', 'MAM01967c', 'MAM02475c', 'MAM01966c'),
+                               label=c('glucose', 'glucose-6-phosphate', 'fructose-6-phosphate', 'fructose-1,6-bisphosphate', 'DHAP', 'GAP', '1,3-bisphospho-D-glycerate', '2,3-bisphospho-D-glycerate', '3-phospho-D-glycerate', '2-phospho-D-glycerate', 'PEP', 'pyruvate', 'pyruvate', 'acetyl-CoA', 'lactate', 'beta-D-Glucose', 'glucose-1-phosphate', 'methylglyoxal', 'glucose-1,6-biphosphate'),
+                               shape='ellipse', shadow='TRUE', color.background=c(rep('lightblue', 12), rep('gold', 2), rep('lightblue', 5)),
                                color.border='black', font.color='black', font.size=20)
-glycolysis_mrEdges = data.frame(from=c('MAM01965c', 'MAM01965c', 'MAM01968c', 'MAM01845c', 'MAM01845c', 'MAM01841c', 'MAM01690c', 'MAM01939c', 'MAM00247c', 'MAM00247c', 'MAM00247c', 'MAM00569c', 'MAM00913c', 'MAM00674c', 'MAM02696c', 'MAM02819c', 'MAM02819m', 'MAM02819c'),
-                                to=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04368', 'MAR04370', 'MAR04372', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388'),
+glycolysis_mrEdges = data.frame(from=c('MAM01965c', 'MAM01965c', 'MAM01968c', 'MAM01845c', 'MAM01845c', 'MAM01841c', 'MAM01690c', 'MAM01939c', 'MAM00247c', 'MAM00247c', 'MAM00247c', 'MAM00569c', 'MAM00913c', 'MAM00674c', 'MAM02696c', 'MAM02819c', 'MAM02819m', 'MAM02819c', 'MAM01965c', 'MAM01967c', 'MAM01841c', 'MAM02475c', 'MAM02696c', 'MAM02696c', 'MAM02696c', 'MAM02696c', 'MAM02696c', 'MAM02696c', 'MAM01965c', 'MAM01965c', 'MAM00247c', 'MAM01967c'),
+                                to=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04368', 'MAR04370', 'MAR04372', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388', 'MAR07745', 'MAR04396', 'MAR04377', 'MAR04360', 'MAR04171', 'MAR04193', 'MAR04210', 'MAR04421', 'MAR04573', 'MAR06627', 'MAR04486', 'MAR04487', 'MAR08585', 'MAR08585'),
                                 arrows='to', dashes=FALSE, color='green', width=1)
-glycolysis_rmEdges = data.frame(from=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04368', 'MAR04370', 'MAR04372', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388'),
-                                to=c('MAM01968c', 'MAM01968c', 'MAM01845c', 'MAM01841c', 'MAM01841c', 'MAM01690c', 'MAM01939c', 'MAM01939c', 'MAM00247c', 'MAM00569c', 'MAM00913c', 'MAM00913c', 'MAM00913c', 'MAM00674c', 'MAM02696c', 'MAM02819c', 'MAM02819m', 'MAM01261m', 'MAM02403c'),
+glycolysis_rmEdges = data.frame(from=c('MAR04394', 'MAR07747', 'MAR04381', 'MAR04301', 'MAR04379', 'MAR04375', 'MAR04375', 'MAR04391', 'MAR04373', 'MAR04371', 'MAR04368', 'MAR04370', 'MAR04372', 'MAR04365', 'MAR04363', 'MAR04358', 'MAR04926', 'MAR04137', 'MAR04388', 'MAR07745', 'MAR04396', 'MAR04377', 'MAR04360', 'MAR04171', 'MAR04193', 'MAR04210', 'MAR04421', 'MAR04573', 'MAR06627', 'MAR04486', 'MAR04487', 'MAR08585', 'MAR08585'),
+                                to=c('MAM01968c', 'MAM01968c', 'MAM01845c', 'MAM01841c', 'MAM01841c', 'MAM01690c', 'MAM01939c', 'MAM01939c', 'MAM00247c', 'MAM00569c', 'MAM00913c', 'MAM00913c', 'MAM00913c', 'MAM00674c', 'MAM02696c', 'MAM02819c', 'MAM02819m', 'MAM01261m', 'MAM02403c', 'MAM01388c', 'MAM01968c', 'MAM01845c', 'MAM02819c', 'MAM02819c', 'MAM02819c', 'MAM02819c', 'MAM02819c', 'MAM02819c', 'MAM02819c', 'MAM01968c', 'MAM01968c', 'MAM00913c', 'MAM01966c'),
                                 arrows='to', dashes=FALSE, color='green', width=1)
 glycolysis_edges = rbind(glycolysis_mrEdges, glycolysis_rmEdges)
 
@@ -23,13 +23,13 @@ glycolysis_fluxes_graph = function(rxn_fluxes, main=''){
     if(rxn_fluxes[rxn]==0){
       glycolysis_edges$color[glycolysis_edges$from==rxn | glycolysis_edges$to==rxn] = 'grey'
     }
-    else if(rxn%in%c('MAR04381', 'MAR04375', 'MAR04373', 'MAR04365') & rxn_fluxes[rxn]>0){
+    else if(rxn%in%c('MAR04381', 'MAR04375', 'MAR04373', 'MAR04365', 'MAR07745') & rxn_fluxes[rxn]>0){
       glycolysis_edges$color[glycolysis_edges$from==rxn | glycolysis_edges$to==rxn] = 'red'
     }
-    else if(rxn%in%c('MAR04368', 'MAR04388') & rxn_fluxes[rxn]<0) glycolysis_edges$color[glycolysis_edges$from==rxn | glycolysis_edges$to==rxn] = 'red'
+    else if(rxn%in%c('MAR04368', 'MAR04388', 'MAR04396', 'MAR06627') & rxn_fluxes[rxn]<0) glycolysis_edges$color[glycolysis_edges$from==rxn | glycolysis_edges$to==rxn] = 'red'
 }
 visNetwork::visNetwork(rbind(glycolysis_metabs, glycolysis_rxns),
-                       glycolysis_edges, main=main, width='100%')
+                       glycolysis_edges, main=main, width='100%', height='600')
 }
 
 
@@ -65,7 +65,7 @@ tca_fluxes_graph = function(rxn_fluxes, main=''){
     else if(rxn%in%c('MAR04589', 'MAR04152', 'MAR04410', 'MAR06414') & rxn_fluxes[rxn]<0) tca_edges$color[tca_edges$from==rxn | tca_edges$to==rxn] = 'red'
   }
   visNetwork::visNetwork(rbind(tca_metabs, tca_rxns),
-                         tca_edges, main=main, width='100%')
+                         tca_edges, main=main, width='100%', height='600')
 }
 
 
@@ -73,19 +73,19 @@ tca_fluxes_graph = function(rxn_fluxes, main=''){
 # ------------------
 # - Glutaminolysis -
 # ------------------
-glutaminolysis_rxns = data.frame(id=c('MAR03892', 'MAR03827', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03825', 'MAR03864', 'MAR05122'),
-                                 label=c('MAR03892', 'MAR03827', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03825', 'MAR03864', 'MAR05122'),
-                                 shape='box', shadow='FALSE', color.background=c(rep('lightgrey', 7), rep('thistle', 3)),
+glutaminolysis_rxns = data.frame(id=c('MAR03892', 'MAR03827', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03825', 'MAR03864', 'MAR05122', 'MAR04300', 'MAR05101'),
+                                 label=c('MAR03892', 'MAR03827', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03825', 'MAR03864', 'MAR05122', 'MAR04300', 'MAR05101'),
+                                 shape='box', shadow='FALSE', color.background=c(rep('lightgrey', 7), rep('thistle', 3), 'lightgrey', 'thistle'),
                                  color.border='black', font.color='black', font.size=20)
-glutaminolysis_metabs = data.frame(id=c('MAM01975m', 'MAM01974m', 'MAM01306m', 'MAM01370m', 'MAM02633m', 'MAM01307m', 'MAM02819m', 'MAM01975c', 'MAM01974c', 'MAM01370c', 'MAM01369c', 'MAM00918m', 'MAM00918c'),
-                                   label=c('glutamine', 'glutamate', 'AKG', 'aspartate', 'OAA', 'alanine', 'pyruvate', 'glutamine', 'glutamate', 'aspartate', 'asparagine', '3-sulfinoalanine', '3-sulfinoalanine'),
-                                   shape='ellipse', shadow='TRUE', color.background=c(rep('gold', 7), rep('lightblue', 4), 'gold', 'lightblue'),
+glutaminolysis_metabs = data.frame(id=c('MAM01975m', 'MAM01974m', 'MAM01306m', 'MAM01370m', 'MAM02633m', 'MAM01307m', 'MAM02819m', 'MAM01975c', 'MAM01974c', 'MAM01370c', 'MAM01369c', 'MAM00918m', 'MAM00918c', 'MAM01845c', 'MAM01963c'),
+                                   label=c('glutamine', 'glutamate', 'AKG', 'aspartate', 'OAA', 'alanine', 'pyruvate', 'glutamine', 'glutamate', 'aspartate', 'asparagine', '3-sulfinoalanine', '3-sulfinoalanine', 'fructose-6-phosphate', 'glucosamine-6-phosphate'),
+                                   shape='ellipse', shadow='TRUE', color.background=c(rep('gold', 7), rep('lightblue', 4), 'gold', rep('lightblue', 3)),
                                    color.border='black', font.color='black', font.size=20)
-glutaminolysis_mrEdges = data.frame(from=c('MAM01975m', 'MAM01974m', 'MAM02633m', 'MAM01974m', 'MAM02819m', 'MAM01974m', 'MAM01974m', 'MAM01975c', 'MAM01370c', 'MAM01975c', 'MAM01370m', 'MAM01974c', 'MAM00918m', 'MAM01974c', 'MAM01974c'),
-                                    to=c('MAR03892', 'MAR03827', 'MAR03827', 'MAR04109', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03903', 'MAR03825', 'MAR03825', 'MAR03864', 'MAR03864', 'MAR05122'),
+glutaminolysis_mrEdges = data.frame(from=c('MAM01975m', 'MAM01974m', 'MAM02633m', 'MAM01974m', 'MAM02819m', 'MAM01974m', 'MAM01974m', 'MAM01975c', 'MAM01370c', 'MAM01975c', 'MAM01370m', 'MAM01974c', 'MAM00918m', 'MAM01974c', 'MAM01974c', 'MAM01845c', 'MAM01975c', 'MAM01975c'),
+                                    to=c('MAR03892', 'MAR03827', 'MAR03827', 'MAR04109', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03903', 'MAR03825', 'MAR03825', 'MAR03864', 'MAR03864', 'MAR05122', 'MAR04300', 'MAR04300', 'MAR05101'),
                                     arrows='to', dashes=FALSE, color='green', width=1)
-glutaminolysis_rmEdges = data.frame(from=c('MAR03892', 'MAR03827', 'MAR03827', 'MAR04109', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03903', 'MAR03825', 'MAR03825', 'MAR03864', 'MAR03864', 'MAR05122'),
-                                    to=c('MAM01974m', 'MAM01306m', 'MAM01370m', 'MAM01307m', 'MAM01306m', 'MAM01306m', 'MAM01306m', 'MAM01974c', 'MAM01369c', 'MAM01974c', 'MAM01370c', 'MAM01974m', 'MAM00918c', 'MAM01974m', 'MAM01974m'),
+glutaminolysis_rmEdges = data.frame(from=c('MAR03892', 'MAR03827', 'MAR03827', 'MAR04109', 'MAR04109', 'MAR03802', 'MAR03804', 'MAR09802', 'MAR03903', 'MAR03903', 'MAR03825', 'MAR03825', 'MAR03864', 'MAR03864', 'MAR05122', 'MAR04300', 'MAR04300', 'MAR05101'),
+                                    to=c('MAM01974m', 'MAM01306m', 'MAM01370m', 'MAM01307m', 'MAM01306m', 'MAM01306m', 'MAM01306m', 'MAM01974c', 'MAM01369c', 'MAM01974c', 'MAM01370c', 'MAM01974m', 'MAM00918c', 'MAM01974m', 'MAM01974m', 'MAM01963c', 'MAM01974c', 'MAM01975m'),
                                     arrows='to', dashes=FALSE, color='green', width=1)
 glutaminolysis_edges = rbind(glutaminolysis_mrEdges, glutaminolysis_rmEdges)
 
@@ -100,7 +100,7 @@ glutaminolysis_fluxes_graph = function(rxn_fluxes, main=''){
     }
   }
   visNetwork::visNetwork(rbind(glutaminolysis_metabs, glutaminolysis_rxns),
-                         glutaminolysis_edges, main=main, width='100%')
+                         glutaminolysis_edges, main=main, width='100%', height='600')
 }
 
 
@@ -112,9 +112,9 @@ oxphos_rxns = data.frame(id=c('MAR06921', 'MAR06911', 'MAR06918', 'MAR06914', 'M
                          label=c('MAR06921', 'MAR06911', 'MAR06918', 'MAR06914', 'MAR13081', 'MAR06912', 'MAR06916'),
                          shape='box', shadow='FALSE', color.background='lightgrey',
                          color.border='black', font.color='black', font.size=20)
-oxphos_metabs = data.frame(id=c('MAM02039m', 'MAM02553m', 'MAM02552m', 'MAM01803m', 'MAM01802m', 'MAM02630m', 'MAM02040m', 'MAM02631m', 'MAM02759m', 'MAM02751m', 'MAM02039i', 'MAM03103m', 'MAM03102m', 'MAM01824m', 'MAM01826m'),
-                           label=c('H+', 'NADH', 'NAD+', 'FADH2', 'FAD', 'O2', 'H2O', 'O2-', 'PPi', 'Pi', 'H+', 'ubiquinone', 'ubiquinol', 'ferricytochrome C', 'ferrocytochrome C'),
-                           shape=c(rep('circle', 11), rep('ellipse', 4)), shadow='TRUE', color.background=c(rep('gold',10), 'orange', rep('gold', 4)),
+oxphos_metabs = data.frame(id=c('MAM02039m', 'MAM02553m', 'MAM02552m', 'MAM01803m', 'MAM01802m', 'MAM02630m', 'MAM02040m', 'MAM02631m', 'MAM02759m', 'MAM02751m', 'MAM02039i', 'MAM03103m', 'MAM03102m', 'MAM01824m', 'MAM01826m', 'MAM01285m', 'MAM01371m'),
+                           label=c('H+', 'NADH', 'NAD+', 'FADH2', 'FAD', 'O2', 'H2O', 'O2-', 'PPi', 'Pi', 'H+', 'ubiquinone', 'ubiquinol', 'ferricytochrome C', 'ferrocytochrome C', 'ADP', 'ATP'),
+                           shape=c(rep('circle', 11), rep('ellipse', 4), rep('circle', 2)), shadow='TRUE', color.background=c(rep('gold',10), 'orange', rep('gold', 6)),
                            color.border='black', font.color='black', font.size=20)
 oxphos_mrEdges = data.frame(from=c('MAM02039m', 'MAM02553m', 'MAM03103m', 'MAM01803m', 'MAM03103m', 'MAM02039m', 'MAM01824m', 'MAM03102m', 'MAM02039m', 'MAM02630m', 'MAM01826m', 'MAM02039m', 'MAM02630m', 'MAM01826m', 'MAM02040m', 'MAM02759m', 'MAM01285m', 'MAM02039i', 'MAM02751m'),
                             to=c('MAR06921', 'MAR06921', 'MAR06921', 'MAR06911', 'MAR06911', 'MAR06918', 'MAR06918', 'MAR06918', 'MAR06914', 'MAR06914', 'MAR06914', 'MAR13081', 'MAR13081', 'MAR13081', 'MAR06912', 'MAR06912', 'MAR06916', 'MAR06916', 'MAR06916'),
@@ -133,7 +133,7 @@ oxphos_fluxes_graph = function(rxn_fluxes, main=''){
     else if(rxn%in%c('MAR06911') & rxn_fluxes[rxn]<0) oxphos_edges$color[oxphos_edges$from==rxn | oxphos_edges$to==rxn] = 'red'
   }
   visNetwork::visNetwork(rbind(oxphos_metabs, oxphos_rxns),
-                         oxphos_edges, main=main, width='100%')
+                         oxphos_edges, main=main, width='100%', height='600')
 }
 
 
