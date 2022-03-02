@@ -150,3 +150,96 @@ fao_fau_fas_bar_graph = function(fba_fluxes, sample){
 
 
 
+
+
+# ---------
+# - UTILS -
+# ---------
+
+source_nadh_fadh2_ct = function(fba_fluxes, cts){
+  fadh2_FAOs = c()
+  nadh_FAOs = c()
+  fadh2_TCAs = c()
+  nadh_TCAs = c()
+  nadh_glycolysiss = c()
+  nadh_glutaminoyliss = c()
+  samps_all = c()
+  for(ct in cts){
+    ct_samps = grep(ct, colnames(fba_fluxes), value=T)
+    for(samp in ct_samps){
+      total_all_fadh2_flux = sum(fba_fluxes[all_fadh2, samp])
+      total_all_fnah_flux = sum(fba_fluxes[all_fnah, samp])
+      fadh2_FAO = sum(fba_fluxes[fadh2, samp]) + total_all_fnah_flux
+      nadhh_FAO = sum(fba_fluxes[nadhh, samp]) + total_all_fadh2_flux + total_all_fnah_flux
+      
+      fadh2_TCA = fba_fluxes['MAR08743', samp]
+      if(fadh2_TCA > 0) fadh2_TCA = 0
+      else fadh2_TCA = abs(fadh2_TCA)
+      xx = fba_fluxes[c('MAR04588', 'MAR04141'), samp]
+      xx[xx>0] = 0
+      xx = abs(xx)
+      nadh_TCA = sum(c(xx, fba_fluxes[c('MAR03957', 'MAR05297'), samp]))
+      
+      xx = fba_fluxes[c('MAR04373', 'MAR04388'), samp]
+      xx[xx>0] = 0
+      xx = abs(xx)
+      nadh_glycolysis = sum(xx)
+      
+      nadh_glutaminolysis = fba_fluxes['MAR03802', samp]
+      if(nadh_glutaminolysis>0) nadh_glutaminolysis = 0
+      else nadh_glutaminolysis = abs(nadh_glutaminolysis)
+      
+      fadh2_FAOs = c(fadh2_FAOs, fadh2_FAO)
+      nadh_FAOs = c(nadh_FAOs, nadhh_FAO)
+      fadh2_TCAs = c(fadh2_TCAs, fadh2_TCA)
+      nadh_TCAs = c(nadh_TCAs, nadh_TCA)
+      nadh_glycolysiss = c(nadh_glycolysiss, nadh_glycolysis)
+      nadh_glutaminoyliss = c(nadh_glutaminoyliss, nadh_glutaminolysis)
+      samps_all = c(samps_all, samp)
+    }
+  }
+  res = data.frame(fadh2_FAOs, nadh_FAOs, fadh2_TCAs, nadh_TCAs, nadh_glycolysiss, nadh_glutaminoyliss,
+                   row.names=samps_all)
+  return(res)
+}
+
+
+
+# ----------------
+# - Not Specific -
+# ----------------
+
+rxn_barplot = function(rxn_fba_fluxes, ct, state, xlab='Cell-Type', ylab='Biomass'){
+  plot_df = data.frame(flux=as.numeric(rxn_fba_fluxes), ct, state)
+  plot_df$state = factor(plot_df$state, levels=c('Normal Matched', 'Tumour Border', 'Tumour Core', 'Tumour'))
+  plot_summary = plot_df %>%
+    group_by(ct, state) %>%
+    summarise(flux=mean(flux))
+  ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=state)) +
+    ggplot2::geom_col(data=plot_summary, fill='white', width=0.7, position=ggplot2::position_dodge(0.8)) +
+    ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width=0.8)) +
+    ggplot2::theme_minimal() + 
+    ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='bottom')
+}
+
+rxns_barplot = function(fba_fluxes_data, rxns_vec, ct, state, xlab='Cell-Type', ylab='Flux'){
+  fluxes=c()
+  rxns=c()
+  for(rxn in rxns_vec){
+    fluxes = c(fluxes, as.numeric(fba_fluxes_data[rxn,]))
+    rxns = c(rxns, rep(rxn, dim(fba_fluxes_data)[2]))
+  }
+  plot_df = data.frame(flux=fluxes, rxn=rxns, ct=rep(ct, length(rxns_vec)), state=rep(state, length(rxns_vec)))
+  plot_df$state = factor(plot_df$state, levels=c('Normal Matched', 'Tumour Border', 'Tumour Core', 'Tumour'))
+  plot_df$rxn = factor(plot_df$rxn, levels=rxns_vec)
+  plot_summary = plot_df %>%
+    group_by(ct, state, rxn) %>%
+    summarise(flux=mean(flux))
+  
+  ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=state)) +
+    ggplot2::geom_col(data=plot_summary, fill='white', width=0.7, position=ggplot2::position_dodge(0.8)) +
+    ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width=0.8)) +
+    ggplot2::theme_minimal() + 
+    ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='bottom') + 
+    ggplot2::facet_wrap(ggplot2::vars(rxn), ncol=2)
+}
