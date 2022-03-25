@@ -3,7 +3,7 @@ if __name__ == '__main__':
     from os import listdir
     from dill import load
     import json
-    from pandas import read_csv, concat
+    from pandas import read_csv, concat, DataFrame
     from gc import collect
     from re import search
 
@@ -135,3 +135,39 @@ if __name__ == '__main__':
         res_fluxes.to_csv(''.join((CRCReconstructionNormalMatched_dir, '/1_control_analysis/FBA/',
                                    condition_id, '.csv')))
 
+    '''
+    Get reaction presence of models
+    '''
+    individuals = listdir(CRCReconstructionNormalMatched_dir)
+    reactions_presence = DataFrame()
+    CRCatlas_sampling = json.load(open(CRCatlas_sampling_file))
+    for indiv in individuals:
+        if search('[.]', indiv):
+            next
+        print('\n', indiv)
+        # Get files that starts with 02_
+        indiv_samples = [file for file in listdir(join(CRCReconstructionNormalMatched_dir, indiv)) if
+                         file.startswith('02_')]
+        for samp in indiv_samples:
+            samp_name = samp.replace('.obj', '').replace('02_', '')
+            print('- ', samp_name)
+            with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
+                temp_dump = load(dump_file)
+                for cell_type, model in temp_dump.items():
+                    if cell_type in CRCatlas_sampling['NormalMatched'][indiv]['control'][samp_name] and cell_type in [
+                        'Naive CD8 Tcells', 'Memory CD8 Tcells', 'Cytotoxic CD8 Tcells', 'Proliferative CD8 Tcells',
+                        'Naive CD4 Tcells', 'Memory CD4 Tcells', 'Proliferative CD4 Tcells', 'IL17+ CD4 Tcells',
+                        'Follicular CD4 Tcells', 'Regulatory CD4 Tcells']:
+                        with_bounds = []
+                        rxn_ids = []
+                        for i in range(0, len(model.reactions)):
+                            rxn_ids.append(model.reactions[i].id)
+                            if model.reactions[i].bounds == (0, 0):
+                                with_bounds.append(0)
+                            else:
+                                with_bounds.append(1)
+                        reactions_presence['_'.join((indiv, samp_name, cell_type))] = with_bounds
+                del temp_dump
+                collect()
+    reactions_presence = reactions_presence.set_axis(rxn_ids, axis='index')
+    reactions_presence.to_csv(''.join((CRCReconstruction_dir, '/general/reaction_presence_Tcells.csv')))
