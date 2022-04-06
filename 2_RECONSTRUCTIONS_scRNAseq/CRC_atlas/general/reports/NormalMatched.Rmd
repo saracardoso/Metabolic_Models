@@ -1,0 +1,400 @@
+---
+title: "Metabolic Modeling of T-cells"
+author: "Sara Cardoso"
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 2
+    number_sections: true
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+load('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/general/reports/NormalMatched_env.RData')
+code_dir = './GENERAL/code/R'
+for(file in list.files(code_dir, full.names=TRUE)) source(file)
+# Important reactions
+important_rxns = jsonlite::read_json('./GENERAL/utility_data/important_reactions_Tcells.json', simplifyVector=TRUE)
+```
+
+# From gene expression to reaction presence
+
+When looking into the UMAPs for scRNAseq data using all genes versus using only the metabolic genes, there is a marked difference in the capacity to separate the cells into their respective cell-types. In fact, only the proliferative T-cells are clearly separated from the rest when using only metabolic genes, which are very well known for their drastic change in metabolism to adjust to their proliferative demands.
+
+```{r warning=FALSE, echo=FALSE, message=FALSE, fig.height=9, fig.width=11}
+# All cells - all genes
+scRNAseq_allGenes = Seurat::DimPlot(tcells, group.by='models_annotation', label=FALSE, pt.size=.5) +
+  ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::ggtitle('scRNAseq | All Genes') +
+  ggplot2::theme(legend.position = 'none')
+
+# All cells - metabolic genes
+tcells_metabolic = Seurat::NormalizeData(tcells_metabolic, assay='RNA')
+tcells_metabolic = Seurat::ScaleData(tcells_metabolic)
+tcells_metabolic = Seurat::RunPCA(tcells_metabolic, assay='integrated')
+tcells_metabolic = Seurat::RunUMAP(tcells_metabolic, dims = 1:30, verbose = FALSE)
+invisible(gc())
+scRNAseq_metabolicGenes = Seurat::DimPlot(tcells_metabolic, group.by='models_annotation', label=FALSE, pt.size=.5) +
+  ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::ggtitle('scRNAseq | Metabolic Genes') +
+  ggplot2::theme(legend.position = 'none')
+
+# Pseudo-bulk - metabolic genes
+pseudo_bulk_tcells_seurat = SeuratObject::CreateSeuratObject(pseudo_bulk_tcells, meta.data = metadata[colnames(pseudo_bulk_tcells),])
+pseudo_bulk_tcells_seurat = Seurat::NormalizeData(pseudo_bulk_tcells_seurat)
+pseudo_bulk_tcells_seurat = Seurat::ScaleData(pseudo_bulk_tcells_seurat)
+pseudo_bulk_tcells_seurat = Seurat::RunPCA(pseudo_bulk_tcells_seurat, assay='RNA',
+                                           features=rownames(pseudo_bulk_tcells))
+pseudo_bulk_tcells_seurat = Seurat::RunUMAP(pseudo_bulk_tcells_seurat, dims = 1:30, verbose = FALSE)
+invisible(gc())
+pseudoBulk_metabolicGenes = Seurat::DimPlot(pseudo_bulk_tcells_seurat, group.by='cell_type', label=FALSE, pt.size=2.5) +
+  ggplot2::scale_colour_manual(values=ct_colors) +
+  ggplot2::ggtitle('pseudo-bulk | Metabolic Genes') + ggplot2::theme(legend.position='none')
+
+# Plots:
+(scRNAseq_allGenes | scRNAseq_metabolicGenes) / 
+  (pseudoBulk_metabolicGenes | ggplot2::ggplot() + ggplot2::theme_void())
+```
+
+Regarding the pseudo-bulk data, which was used to create a cell-type (if present) model for each sample in each individual, we can still see the same separation of the proliferative T-cells. Furthermore, other cell-types seem to be grouping together.
+
+Next, machine learning with a random forest classifier was performed using either pseudo-bulk data or reaction presence data (which represents the reactions that were considered present when constructing the cell-type specific models).
+
+The evaluation metric used to assess the prediction capability was the Mathews correlation coefficient (MCC), as it is appropriate to classify multi-class problems, perfectly symmetric (no class is more important than the other), and not sensitive to class-imbalance (i.e., when the different classes are not evenly represented, which happens in this data, with proliferative T-cells having far less models than other cell-types). The general MCC formula is the following:
+
+$$ MCC = \frac{TP * TN - FP * FN}{\sqrt{(TP + FP)(TP + FN)(TN + FP)(TN + FN)}} $$
+
+The MCC metric varies from -1 to 1. An MCC value 1 means that all cell-types were correctly classified, while a value of -1 means that all cell-types were not well classified. An MCC value of 0 means that the classifier is no better than random guessing.
+
+
+```{r echo=FALSE, fig.height=3, fig.width=3, fig.align='center'}
+mcc_values = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/FBA/ml/MCC.csv', row.names=1, header=T)
+data_typel1 = c('Pseudo Bulk', 'Pseudo Bulk', 'FBA Fluxes', 'FBA Fluxes', 'Absolute FBA Fluxes',
+                'Absolute FBA Fluxes', 'FBA Activity', 'FBA Activity', 'Reaction Presence',
+                'Reaction Presence')
+data_typel2 = c('All Genes/Reactions', 'Metabolic Genes / Reactions with GPRs', 'All Genes/Reactions',
+                'Metabolic Genes / Reactions with GPRs', 'All Genes/Reactions',
+                'Metabolic Genes / Reactions with GPRs', 'All Genes/Reactions',
+                'Metabolic Genes / Reactions with GPRs', 'All Genes/Reactions',
+                'Metabolic Genes / Reactions with GPRs')
+plot_df = cbind(mcc_values, data_typel1, data_typel2)
+colnames(plot_df) = c('MCC', 'l1', 'l2')
+plot_df$l1 = factor(plot_df$l1, levels=c('Pseudo Bulk', 'Reaction Presence', 'FBA Activity', 'Absolute FBA Fluxes', 'FBA Fluxes'))
+plot_df = plot_df[plot_df$l2=='Metabolic Genes / Reactions with GPRs',]
+plot_df = plot_df[plot_df$l1%in%c('Pseudo Bulk', 'Reaction Presence'),]
+
+ggplot2::ggplot(plot_df, ggplot2::aes(y=MCC, x=l1)) +
+  ggplot2::geom_bar(stat="identity", fill='#E69F00', colour='black', width=0.5) +
+  ggplot2::theme_minimal() + ggplot2::xlab('') + ggplot2::ylim(0, 1) +
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1))
+  
+```
+
+The dataset that leads to the best results is the pseudo-bulk data, with an MCC greater than 0.75. Prediction capacity slightly decreases when using reaction presence data, with an MCC of around 0.56. This shows that the models do a good job at representing the cell-types at the level of what reactions should be included or not to accurately represent the transcriptomics data.
+
+# Differential Analysis - Pathways
+
+[explanation]
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='100%', fig.height=9.5}
+# 0. Load annotations (only considering pathways with more than 5 reactions):
+HumanGEM_subsystems_rxns = jsonlite::read_json('./GENERAL/utility_data/subsystems_reactions_mapping.json',
+                                               simplifyVector = TRUE)
+for(path in names(HumanGEM_subsystems_rxns)){
+  rxns = HumanGEM_subsystems_rxns[[path]][HumanGEM_subsystems_rxns[[path]]%in%rownames(rxn_presence_gprs)]
+  if(length(rxns)>5) HumanGEM_subsystems_rxns[[path]] = rxns
+  else HumanGEM_subsystems_rxns[[path]] = NULL
+}
+
+# 1. Calculate percentage of active reactions per pathway per model:
+n_models = dim(rxn_presence)[2]
+n_pathways = length(HumanGEM_subsystems_rxns)
+perc_presence = matrix(rep(0, n_models*n_pathways), nrow=n_pathways)
+dimnames(perc_presence) = list(names(HumanGEM_subsystems_rxns), colnames(rxn_presence))
+# 1.1. Populate matrix:
+for(pathway in rownames(perc_presence)){
+  message(pathway)
+  for(model in colnames(perc_presence)){
+    presence_pathway_model = rxn_presence[HumanGEM_subsystems_rxns[[pathway]],model]
+    perc = sum(presence_pathway_model) / length(presence_pathway_model) * 100
+    perc_presence[pathway, model] = perc
+  }
+}
+
+# 2. Differential pathways:
+diff_pathways = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/diff_analysis_percPresence.csv')
+
+# 3. Heatmap with only differential pathways:
+diff_paths_heatmap = unique(diff_pathways$pathway[diff_pathways$pval_adjust<0.01])
+ht2 = ComplexHeatmap::Heatmap(perc_presence[diff_paths_heatmap,],
+                              col = circlize::colorRamp2(c(0, 50, 100),
+                                                         c('blue', 'white', 'red')),
+                             name='% Presence',
+                             column_split = metadata[colnames(perc_presence),]$cell_type,
+                             column_title = NULL,
+                             show_column_names = FALSE,
+                             row_names_gp = grid::gpar(fontsize=6),
+                             top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata[colnames(perc_presence),]$cell_type, state=metadata[colnames(perc_presence),]$state, col=list(cell_type=ct_colors, state=state_colors), annotation_legend_param = list(cell_type=list(title='Cell Type'), state=list(title='State')), show_annotation_name=FALSE, simple_anno_size = unit(2,'mm')))
+ComplexHeatmap::draw(ht2, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+```
+
+[analyse results]
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+DT::datatable(diff_pathways[diff_pathways$pval_adjust<0.01,c(2,5,6)], rownames=FALSE,
+              options=list(scrollY=500, paging=FALSE))
+```
+
+# Biomass vs ATP production
+
+As expected, proliferative CD4 and CD8 T-cells seem to have a higher biomass flux than their naive counterparts. Regarding the remaining cell-types, each seems to have a varied biomass flux across the different models, with the exception of cytotoxic CD8 and IL17+ CD4 T-cells, which have relatively smaller biomass fluxes.
+
+Naive CD8 T-cells have markedly more ATP production than their proliferative counterparts. However, the same thing for naive vs proliferative CD4 T-cells is not clear.
+
+When comparing biomass and ATP production, ATP production is clearly bigger in IL17+ CD4 T-cells and naive CD8 T-cells. In proliferative CD4 and CD8 T-cells, the flux going through the biomass reaction is clearly bigger than their ATP production.
+
+```{r biomass, echo=FALSE, warning=FALSE, fig.height=7}
+plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR13082',]), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+biomass = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ggtitle('Biomass')
+
+plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR06916',]), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+atp = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ggtitle('ATP Production')
+
+biomass / atp
+```
+
+
+# Sources of FADH2 and NADH {.tabset}
+
+In general, all cell-types resort obtain most of their FADH2 and NADH from Fatty Acid Oxidation (FAO), which is expected according to the literature.
+
+## FADH2 {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+xx = source_nadh_fadh2_ct(fba_fluxes, unique(metadata$cell_type))
+
+values = c()
+for(k in 1:dim(xx)[2]) values = c(values, xx[,k])
+source_energy = c(rep('FADH2', dim(xx)[1]), rep('NADH', dim(xx)[1]), rep('FADH2', dim(xx)[1]),
+                  rep('NADH', dim(xx)[1]*3))
+pathways = c(rep('FAO', dim(xx)[1]*2), rep('TCA', dim(xx)[1]*2),
+             rep('Glycolysis', dim(xx)[1]), rep('Glutaminolysis', dim(xx)[1]))
+cell_types = rep(metadata[rownames(xx),'cell_type'], dim(xx)[2])
+
+plot_df = data.frame(values, source_energy, pathways, cell_types)
+
+fadh2_plot = plot_df[plot_df$source_energy=='FADH2',]
+fadh2_summary = fadh2_plot %>%
+  group_by(cell_types, pathways) %>%
+  summarise(values=mean(values))
+nadh_plot = plot_df[plot_df$source_energy=='NADH',]
+nadh_summary = nadh_plot %>%
+  group_by(cell_types, pathways) %>%
+  summarise(values=mean(values))
+```
+
+```{r fig.height=5, echo=FALSE}
+ggplot2::ggplot(fadh2_plot, ggplot2::aes(x=cell_types, y=values, colour=pathways)) +
+  ggplot2::geom_boxplot() +
+    ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width=0.8)) +
+    ggplot2::theme_minimal() + 
+    ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1),
+                   legend.position='bottom') + ggplot2::ylab('Flux')
+```
+
+## NADH {.unnumbered}
+
+```{r fig.height=5, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot2::ggplot(nadh_plot, ggplot2::aes(x=cell_types, y=values, colour=pathways)) +
+    ggplot2::geom_boxplot() +
+    ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width=0.8)) +
+    ggplot2::theme_minimal() + 
+    ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1),
+                   legend.position='bottom') + ggplot2::ylab('Flux')
+```
+
+
+# Uptakes
+
+## Fatty Acids (FAs)
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+fau = colSums(na.omit(fba_fluxes[important_rxns$uptakes$`fatty acids`, ]))
+plot_df = data.frame(flux=fau, ct=metadata$cell_type)
+
+ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)')
+```
+
+## Glucose vs Glutamine
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=7}
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR09034',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+
+glucose = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1) +
+  ggplot2::ggtitle('Glucose')
+
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR09071',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+
+glutamine = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1) +
+  ggplot2::ggtitle('Glutamine')
+
+glucose / glutamine
+```
+
+
+
+## Lactate
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=7}
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR09135',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+llactate = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1) +
+  ggplot2::ggtitle('L-Lactate')
+
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR09136',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+dlactate = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1) +
+  ggplot2::ggtitle('D-Lactate')
+
+llactate / dlactate
+```
+
+## Other Uptakes {.tabset}
+
+### ATP {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR00569',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+
+ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1)
+```
+
+### NADH {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR12141',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+
+ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1)
+
+ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)')
+```
+
+### H+ {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR09079',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+
+ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1)
+```
+
+### Oxygen {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+plot_df = data.frame(flux=(-as.numeric(fba_fluxes['MAR09048',])), ct=metadata$cell_type)
+plot_summary = plot_df %>%
+  group_by(ct) %>%
+  summarise(flux=mean(flux))
+
+ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(-1, 1)
+```
+
+
+
+
+# 'Abnormal' Situations
+
+## Normal vs Unlimited Cholesterol (B1)
+
+## Normal vs No Tryptophan
+
+## Unlimited vs No Oxygen
+
+## Normal vs High Lactate concentration
+
+## ... 
+
+
+# Gene Essentiality
+
+
+
+# 'Tumour' Medium
+
+
+
