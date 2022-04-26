@@ -67,6 +67,7 @@ if __name__ == '__main__':
     evals['B8.2_and_B9'] = {'change_media_bounds': {'MAR09063': 0}, 'change_internal_bounds': None}
     evals['B8.3'] = {'change_media_bounds': {'MAR09063': 1000, 'MAR09034': 0}, 'change_internal_bounds': None}
     evals['B8.4'] = {'change_media_bounds': {'MAR09063': 0, 'MAR09034': 0}, 'change_internal_bounds': None}
+    evals['B8.5'] = {'change_media_bounds': {'MAR09034': 0}, 'change_internal_bounds': None}
     # --- B10:
     slc7a5_reactions = []
     slc1a5_reactions = []
@@ -91,20 +92,21 @@ if __name__ == '__main__':
     evals['B11'] = {'change_media_bounds': {'MAR09069': 0, 'MAR09067': 0}, 'change_internal_bounds': None}
     evals['B12.1'] = {'change_media_bounds': {'MAR09066': 0}, 'change_internal_bounds': None}
     evals['B12.2'] = {'change_media_bounds': {'MAR09065': 0}, 'change_internal_bounds': None}
-    evals['B12.1'] = {'change_media_bounds': {'MAR09066': 0, 'MAR09065': 0}, 'change_internal_bounds': None}
+    evals['B12.3'] = {'change_media_bounds': {'MAR09066': 0, 'MAR09065': 0}, 'change_internal_bounds': None}
     evals['B13'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR06916': (0, 0)}}
+    evals['B13.o'] = {'change_media_bounds': {'MAR09048': 0}, 'change_internal_bounds': {'MAR06916': (0, 0)}}
     evals['B14'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR09517': (0, 0)}}
+    evals['B14.o'] = {'change_media_bounds': {'MAR09048': 0}, 'change_internal_bounds': {'MAR09517': (0, 0)}}
     evals['B15.1'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR00030': (0, 0), 'MAR04156': (0, 0),
-                                                                              'MAR007672': (0, 0), 'MAR07673': (0, 0)}}
-    evals['B15.2'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR04156': (0, 0), 'MAR04295': (0, 0),
-                                                                              'MAR007672': (0, 0), 'MAR07673': (0, 0)}}
-    evals['B15.3'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR00030': (0, 0), 'MAR04156': (0, 0),
-                                                                              'MAR04295': (0, 0), 'MAR007672': (0, 0),
                                                                               'MAR07673': (0, 0)}}
+    evals['B15.2'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR04156': (0, 0), 'MAR04295': (0, 0),
+                                                                              'MAR07673': (0, 0)}}
+    evals['B15.3'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR00030': (0, 0), 'MAR04156': (0, 0),
+                                                                              'MAR04295': (0, 0), 'MAR07673': (0, 0)}}
     evals['B16'] = {'change_media_bounds': {'MAR09048': 0}, 'change_internal_bounds': None}
     evals['B17'] = {'change_media_bounds': {'MAR09262': 0, 'MAR09275': 0, 'MAR09220': 0, 'MAR09436': 0, 'MAR09343': 0,
                                             'MAR01923': 0, 'MAR09847': 0}, 'change_internal_bounds': None}
-    evals['B18'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR00719': (0, 0), 'MAR03839': (0, 0)}}
+    evals['B21'] = {'change_media_bounds': None, 'change_internal_bounds': {'MAR03839': (0, 0)}}
 
     # 3. Save dictionary in json file:
     print('\nSaving evaluations into a json file...')

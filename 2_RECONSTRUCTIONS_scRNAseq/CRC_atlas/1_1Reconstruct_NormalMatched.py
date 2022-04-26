@@ -58,7 +58,7 @@ if __name__ == '__main__':
     print('\nReconstructing models...')
     individuals = listdir(CRCatlasNormalMatched_dir)
     reconstructions = {}
-    for individual in ['SMC07', 'SMC08', 'SMC10']:#individuals:
+    for individual in individuals:
         print('.. ', individual)
         reconstructions[individual] = {}
         samples = listdir(join(CRCatlasNormalMatched_dir, individual))
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Optional:
     reconstructions = {}
     individuals = listdir(CRCatlasNormalMatched_dir)
-    for indiv in ['SMC10']:# individuals:
+    for indiv in individuals:
         print('\n', indiv)
         reconstructions[indiv] = {}
         # Get files that starts with 02_

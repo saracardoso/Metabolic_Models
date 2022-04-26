@@ -95,7 +95,7 @@ def fba_evaluations(model, fva_results, fba_result, change_media_bounds: dict = 
             solFBA = model_test.optimize(objective_sense='maximize')
         else:
             # ROOM
-            solFBA = room(model_test, solution=fba_result)
+            solFBA = room(model_test, solution=fba_result, linear=True)
         print('-Done!')
     return solFBA.fluxes
 
