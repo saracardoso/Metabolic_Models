@@ -8,7 +8,6 @@ if __name__ == '__main__':
     from re import search
 
     from GENERAL.code.python.Validation import helper_fba_condition_normalmatched
-    from cobra.flux_analysis import flux_variability_analysis
 
     '''
     Directories and files
@@ -60,7 +59,7 @@ if __name__ == '__main__':
                         # Run pFBA
                         # model.solver = 'glpk_exact'
                         solFBA = model.optimize(objective_sense='maximize')
-                        # solpFBA = pfba(model)
+                        # solFBA = pfba(model)
                         # Save predicted fluxes
                         models_names.append('_'.join((indiv, samp_name, cell_type)))
                         if predicted_fluxes is None:
@@ -70,7 +69,7 @@ if __name__ == '__main__':
                 del temp_dump
                 collect()
     predicted_fluxes.columns = models_names
-    predicted_fluxes.to_csv(join(CRCReconstructionNormalMatched_dir, '1_control_analysis/FBA/normal_pFBA.csv'))
+    predicted_fluxes.to_csv(join(CRCReconstructionNormalMatched_dir, '1_control_analysis/FBA/normal_FBA.csv'))
 
     '''
     Evaluations upon medium changes

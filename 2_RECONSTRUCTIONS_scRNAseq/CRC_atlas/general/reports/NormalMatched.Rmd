@@ -22,6 +22,8 @@ for(file in list.files(code_dir, full.names=TRUE)) source(file)
 important_rxns = jsonlite::read_json('./GENERAL/utility_data/important_reactions_Tcells.json', simplifyVector=TRUE)
 # Media fluxes:
 media = read.csv('./GENERAL/utility_data/media_8percSerum.csv', row.names=1)
+# Take model out:
+metadata = metadata[colnames(pseudo_bulk_tcells),]
 ```
 
 # From gene expression to reaction presence
@@ -289,7 +291,13 @@ In general, reaction presence of pathways related to fatty acids are in agreemen
 #              options=list(scrollY=500, paging=FALSE))
 ```
 
-# Biomass vs ATP production {.tabset}
+# Flux Prediction under Normal Human Blood Medium
+
+Next, we predicted the reaction fluxes in the models using FBA. For proliferative models, the biomass reaction was optimized, while for the other models both the biomass and the ATP production reactions were optimized. The metabolites included in the medium, and respective fluxes, were based on the *Serum Metabolome Database* (SMDB), in order to obtain a medium as close as possible to the physiological one.
+
+The biomass and ATP production were checked, as well as the pathways that produce the necessary FADH2 and NADH. The total flux of FAs uptake was also checked.
+
+## Biomass vs ATP production {.tabset}
 
 As expected, proliferative CD4 and CD8 T-cells seem to have a higher biomass flux than their naive counterparts. Regarding the remaining cell-types, each seems to have a varied biomass flux across the different models, with the exception of cytotoxic CD8 and IL17+ CD4 T-cells, which have relatively smaller biomass fluxes.
 
@@ -298,16 +306,18 @@ Naive CD8 T-cells have markedly more ATP production than their proliferative cou
 When comparing biomass and ATP production, ATP production is clearly bigger in IL17+ CD4 T-cells and naive CD8 T-cells. In proliferative CD4 and CD8 T-cells, the flux going through the biomass reaction is clearly bigger than their ATP production.
 
 ```{r biomass, echo=FALSE, warning=FALSE, fig.height=7}
-plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR13082',]), ct=metadata$cell_type)
+plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR13082', rownames(metadata)]),
+                     ct=metadata$cell_type, state=metadata$state)
 biomass = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ggtitle('Biomass')
 
-plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR06916',]), ct=metadata$cell_type)
+plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR06916', rownames(metadata)]),
+                     ct=metadata$cell_type)
 atp = ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ggtitle('ATP Production')
@@ -317,28 +327,28 @@ biomass / atp
 
 We then checked how different biomass and ATP production were between cell-type models from normal vs tumour tissue:
 
-## Biomass {.unnumbered}
+### Biomass {.unnumbered}
 
 ```{r echo=FALSE, warning=FALSE}
-plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR13082',]),
+plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR13082', rownames(metadata)]),
                      ct=metadata$cell_type, state=metadata$state)
 plot_df$state[plot_df$state%in%c('Tumour', 'Tumour Core', 'Tumour Border')] = 'Tumour'
 biomass = ggplot2::ggplot(plot_df, ggplot2::aes(x=state, y=flux, colour=ct)) +
-  ggplot2::geom_boxplot() + ggplot2::facet_wrap(ggplot2::vars(ct)) +
+  ggplot2::geom_boxplot(outlier.shape=NA) + ggplot2::facet_wrap(ggplot2::vars(ct)) +
   ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) + 
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ggtitle('Biomass')
 biomass
 ```
 
-## ATP Production {.unnumbered}
+### ATP Production {.unnumbered}
 
 ```{r echo=FALSE, warning=FALSE}
-plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR06916',]),
+plot_df = data.frame(flux=as.numeric(fba_fluxes['MAR06916',  rownames(metadata)]),
                      ct=metadata$cell_type, state=metadata$state)
 plot_df$state[plot_df$state%in%c('Tumour', 'Tumour Core', 'Tumour Border')] = 'Tumour'
 atp = ggplot2::ggplot(plot_df, ggplot2::aes(x=state, y=flux, colour=ct)) +
-  ggplot2::geom_boxplot() + ggplot2::facet_wrap(ggplot2::vars(ct)) +
+  ggplot2::geom_boxplot(outlier.shape=NA) + ggplot2::facet_wrap(ggplot2::vars(ct)) +
   ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ggtitle('ATP Production')
@@ -346,20 +356,20 @@ atp = ggplot2::ggplot(plot_df, ggplot2::aes(x=state, y=flux, colour=ct)) +
 atp
 ```
 
-# {.unnumbered}
+## {.unnumbered}
 
 For cytotoxic CD8 and regulatory CD4 T-cells, models from tumour tissues have higher biomass flux than those from normal matched mucosa. For memory CD8 T-cells, there is increased biomass in models from tumour border.
 
 
 
-# Sources of FADH2 and NADH {.tabset}
+## Sources of FADH2 and NADH {.tabset}
 
 In general, all cell-types resort obtain most of their FADH2 and NADH from Fatty Acid Oxidation (FAO), which is expected according to the literature.
 
-## FADH2 {.unnumbered}
+### FADH2 {.unnumbered}
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-xx = source_nadh_fadh2_ct(fba_fluxes, unique(metadata$cell_type))
+xx = source_nadh_fadh2_ct(fba_fluxes[, rownames(metadata)], unique(metadata$cell_type))
 
 values = c()
 for(k in 1:dim(xx)[2]) values = c(values, xx[,k])
@@ -383,18 +393,18 @@ nadh_summary = nadh_plot %>%
 
 ```{r fig.height=5, echo=FALSE}
 ggplot2::ggplot(fadh2_plot, ggplot2::aes(x=cell_types, y=values, colour=pathways)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
     ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width=0.8)) +
     ggplot2::theme_minimal() + 
     ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1),
                    legend.position='bottom') + ggplot2::ylab('Flux')
 ```
 
-## NADH {.unnumbered}
+### NADH {.unnumbered}
 
 ```{r fig.height=5, echo=FALSE, warning=FALSE, message=FALSE}
 ggplot2::ggplot(nadh_plot, ggplot2::aes(x=cell_types, y=values, colour=pathways)) +
-    ggplot2::geom_boxplot() +
+    ggplot2::geom_boxplot(outlier.shape=NA) +
     ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width=0.8)) +
     ggplot2::theme_minimal() + 
     ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1),
@@ -402,16 +412,17 @@ ggplot2::ggplot(nadh_plot, ggplot2::aes(x=cell_types, y=values, colour=pathways)
 ```
 
 
-# FAs Uptake
+## FAs Uptake
 
 In general, cytotoxic CD8, naïve CD4 and proliferative CD4 and CD8 T-cells are the cell-types with the least overall uptake of fatty acids (FAs). Although on average the other cell-types uptake more FAs, the uptake is still very varied across the models of each cell-type.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-fau = colSums(na.omit(fba_fluxes[important_rxns$uptakes$`fatty acids`, ]))
+fau = colSums(na.omit(fba_fluxes[important_rxns$uptakes$`fatty acids`,
+                                 rownames(metadata)]))
 plot_df = data.frame(flux=fau, ct=metadata$cell_type)
 
 ggplot2::ggplot(plot_df, ggplot2::aes(x=ct, y=flux, colour=ct)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)')
@@ -422,12 +433,13 @@ This is in line with the literature. Proliferative T-cells rely more in FA synth
 We then checked how different biomass and ATP production were between cell-type models from normal vs tumour tissue:
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-fau = colSums(na.omit(fba_fluxes[important_rxns$uptakes$`fatty acids`, ]))
+fau = colSums(na.omit(fba_fluxes[important_rxns$uptakes$`fatty acids`,
+                                 rownames(metadata)]))
 plot_df = data.frame(flux=fau, ct=metadata$cell_type, state=metadata$state)
 plot_df$state[plot_df$state%in%c('Tumour', 'Tumour Core', 'Tumour Border')] = 'Tumour'
 
 ggplot2::ggplot(plot_df, ggplot2::aes(x=state, y=flux, colour=ct)) +
-  ggplot2::geom_boxplot() + ggplot2::facet_wrap(ggplot2::vars(ct)) +
+  ggplot2::geom_boxplot(outlier.shape=NA) + ggplot2::facet_wrap(ggplot2::vars(ct)) +
   ggplot2::geom_jitter(position=ggplot2::position_jitterdodge(jitter.width=0.2, dodge.width = 0.8)) +
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') + ggplot2::scale_colour_manual(values=ct_colors) + ggplot2::xlab('') + ggplot2::ylab('Flux (mmol/gDW/h)')
@@ -436,6 +448,8 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x=state, y=flux, colour=ct)) +
 
 
 # Medium Changes
+
+We also checked how the models would behave when certain metabolites were excluded from the medium. The exclusion of these metabolites from the medium has been found in previous studies to affect T-cells. As such, the models' outcomes were compared to those of the literature.
 
 ## No Tryptophan
 
@@ -450,15 +464,15 @@ B2_fluxes_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/2
 B2_fluxes = 2 * ((1 / (1 + exp(-B2_fluxes_raw))) - 0.5)
 
 # Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',rownames(metadata)]),
-                              as.numeric(B2_fluxes['MAR13082',rownames(metadata)])),
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082', rownames(metadata)]),
+                              as.numeric(B2_fluxes['MAR13082', rownames(metadata)])),
                      cell_types=rep(metadata[,'cell_type'], 2),
                      medium=factor(c(rep('Normal', dim(metadata)[1]),
                                      rep('No Tryptophan', dim(metadata)[1])),
                                    levels=c('Normal', 'No Tryptophan')),
-                     paired=c(1:173, 1:173))
+                     paired=c(1:172, 1:172))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -486,19 +500,19 @@ B4_fluxes_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/2
 B4_fluxes = 2 * ((1 / (1 + exp(-B4_fluxes_raw))) - 0.5)
 
 # Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',rownames(metadata)]),
-                              as.numeric(B4_fluxes['MAR13082',rownames(metadata)])),
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082', rownames(metadata)]),
+                              as.numeric(B4_fluxes['MAR13082', rownames(metadata)])),
                      cell_types=rep(metadata[,'cell_type'], 2),
                      medium=factor(c(rep('Normal', dim(metadata)[1]),
                                      rep('No Oxygen', dim(metadata)[1])),
                                    levels=c('Normal', 'No Oxygen')),
-                     paired=c(1:173, 1:173))
+                     paired=c(1:172, 1:172))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
-  ggplot2::facet_wrap(ggplot2::vars(cell_types)) +
+  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=5) +
   ggplot2::theme_minimal() + 
   ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1), legend.position='none') +
   ggplot2::scale_colour_manual(values=c('Normal'='black',
@@ -514,15 +528,15 @@ One important thing to take in mind is that metabolic models only capture metabo
 Finally, as expected, the reaction catalised by oxygen-dependent prolyl hydroxylase domain enzymes (PHDs) does not have any flux in any model when no oxygen is present in the medium:
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR04776',rownames(metadata)]),
-                              as.numeric(B4_fluxes['MAR04776',rownames(metadata)])),
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR04776', rownames(metadata)]),
+                              as.numeric(B4_fluxes['MAR04776', rownames(metadata)])),
                      cell_types=rep(metadata[,'cell_type'], 2),
                      medium=factor(c(rep('Normal', dim(metadata)[1]),
                                      rep('No Oxygen', dim(metadata)[1])),
                                    levels=c('Normal', 'No Oxygen')),
-                     paired=c(1:173, 1:173))
+                     paired=c(1:172, 1:172))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -538,10 +552,10 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
 Next, we checked if the models that uptaked the most amounts of oxygen were the ones that suffered the most in biomass flux when oxygen was no longer available:
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
-bmss_diff = abs(as.numeric(B4_fluxes['MAR13082',rownames(metadata)]) -
-  as.numeric(fba_fluxes['MAR13082',rownames(metadata)]))
+bmss_diff = abs(as.numeric(B4_fluxes['MAR13082', rownames(metadata)]) -
+  as.numeric(fba_fluxes['MAR13082', rownames(metadata)]))
 plt_df = data.frame(biomass_diff=bmss_diff,
-                    uptake=(-as.numeric(fba_fluxes['MAR09048',rownames(metadata)])))
+                    uptake=(-as.numeric(fba_fluxes['MAR09048', rownames(metadata)])))
 ggplot2::ggplot(plt_df, ggplot2::aes(x=uptake, y=biomass_diff)) +
   ggplot2::geom_point() + ggplot2::geom_smooth(method='lm', se=FALSE) +
   ggplot2::theme_minimal() +
@@ -553,14 +567,14 @@ What happens to the biomass of the cell-types from normal tissue vs tumour tissu
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=15}
 # Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',rownames(metadata)]),
-                              as.numeric(B4_fluxes['MAR13082',rownames(metadata)])),
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082', rownames(metadata)]),
+                              as.numeric(B4_fluxes['MAR13082', rownames(metadata)])),
                      cell_types=rep(metadata[,'cell_type'], 2),
                      state=rep(metadata[,'state'], 2),
                      medium=factor(c(rep('Normal', dim(metadata)[1]),
                                      rep('No Oxygen', dim(metadata)[1])),
                                    levels=c('Normal', 'No Oxygen')),
-                     paired=c(1:173, 1:173))
+                     paired=c(1:172, 1:172))
 plot_df$state[plot_df$state!='Normal Matched'] = 'Tumour'
 
 plts = list()
@@ -568,7 +582,7 @@ for(ct in unique(plot_df$cell_types)){
   plot_df_ct = plot_df[plot_df$cell_types==ct,]
   plts[[ct]] = ggplot2::ggplot(plot_df_ct,
                                ggplot2::aes(x=medium, y=values, colour=medium)) +
-    ggplot2::geom_boxplot() +
+    ggplot2::geom_boxplot(outlier.shape=NA) +
     ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                        position = ggplot2::position_dodge(0.2)) +
     ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired),
@@ -586,9 +600,7 @@ patchwork::wrap_plots(plts, ncol=2)
 
 
 
-## No Glucose and/or Glutamine
-
-### {.tabset .unnumbered}
+## No Glutamine {.tabset}
 
 [B8]
 
@@ -619,8 +631,8 @@ B85_fluxes = 2 * ((1 / (1 + exp(-B85_fluxes_raw))) - 0.5)
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
 # Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B82_fluxes['MAR13082',colnames(B81_fluxes)])),
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082', colnames(B81_fluxes)]),
+                              as.numeric(B82_fluxes['MAR13082', colnames(B81_fluxes)])),
                      cell_types=rep(metadata[colnames(B81_fluxes),'cell_type'], 2),
                      medium=factor(c(rep('Normal', dim(B81_fluxes)[2]),
                                      rep('No Glutamine w/ Normal Glucose',
@@ -628,7 +640,7 @@ plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B81_flux
                                    levels=c('Normal', 'No Glutamine w/ Normal Glucose')),
                      paired=rep(1:172, 2))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -643,11 +655,9 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
 
 As reported in the literature, glutamine seems to be essential for all T-cells' proliferation (@metabTasks_CD4, @metabTasks_Tcells, @metabTasks_Tcells3), especially because it acts as a nitrogen donor for DNA and RNA nucleotide production (@metabTasks_CD4, @metabTasks_Tcells). Indeed, DNA and RNA production decreases to zero, or very close to zero, when no glutamine is available in the models' medium.
 
-### {.tabset .unnumbered}
-
 [B9]
 
-#### DNA Production {.unnumbered}
+### DNA Production {.unnumbered}
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
 plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR07160', colnames(B82_fluxes)]),
@@ -658,7 +668,7 @@ plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR07160', colnames(B82_flu
                                    levels=c('Normal', 'No Glutamine')),
                      paired=c(1:length(colnames(B82_fluxes)), 1:length(colnames(B82_fluxes))))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -671,7 +681,7 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
   ggplot2::ylab('Flux (mmol/gDW/h)') + ggplot2::ylim(0,5e-4)
 ```
 
-#### RNA Production {.unnumbered}
+### RNA Production {.unnumbered}
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
 plot_df = data.frame(values=c(as.numeric(colSums(fba_fluxes[c('MAR07161', 'MAR07162'),
@@ -685,7 +695,7 @@ plot_df = data.frame(values=c(as.numeric(colSums(fba_fluxes[c('MAR07161', 'MAR07
                      paired=c(1:length(colnames(B82_fluxes)),
                               1:length(colnames(B82_fluxes))))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -698,114 +708,7 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
   ggplot2::ylab('Flux (mmol/gDW/h)')
 ```
 
-### {.tabset .unnumbered}
 
-Removing both glucose in addition to glutamine does not seem to make much difference in the biomass flux predicted. In fact, when only removing glucose from medium, biomass only decreases slightly in the cell-types follicular CD4, proliferative CD8, and regulatory CD4 T-cells. In fact, most models in these cell-types do not suffer changes in the biomass flux, with only some suffering from biomass flux decrease. This, however, is not corroborated by literature, as it has been reported decreased T-cell proliferation rates in glucose-deficient media (@metabTasks_CD4).
-
-For those models whose biomass is affected as expected in the literature, increasing glutamine availability only leads to biomass increase in very few models. In fact, presence of high levels of alternative energy sources like glutamine has been found to not help increasing proliferation in glucose-deficient media (@metabTasks_CD4).
-
-#### No Glutamine and Glucose {.unnumbered}
-
-```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
-# Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B84_fluxes['MAR13082',colnames(B81_fluxes)])),
-                     cell_types=rep(metadata[colnames(B81_fluxes),'cell_type'], 2),
-                     medium=factor(c(rep('Normal', dim(B81_fluxes)[2]),
-                                     rep('No Glutamine w/ No Glucose',
-                                         dim(B82_fluxes)[2])),
-                                   levels=c('Normal', 'No Glutamine w/ No Glucose')),
-                     paired=rep(1:172, 2))
-ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
-  ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
-                     position = ggplot2::position_dodge(0.2)) +
-  ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
-  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=4) +
-  ggplot2::theme_minimal() + 
-  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
-  ggplot2::scale_colour_manual(values=c('Normal'='black',
-                                        'No Glutamine w/ No Glucose'='darkred')) +
-  ggplot2::xlab('') +
-  ggplot2::ylab('Flux (mmol/gDW/h)')
-```
-
-#### No Glucose {.unnumbered}
-
-```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=8}
-# Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B83_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B85_fluxes['MAR13082',colnames(B81_fluxes)])),
-                     cell_types=rep(metadata[colnames(B81_fluxes),'cell_type'], 3),
-                     medium=factor(c(rep('Normal', dim(B81_fluxes)[2]),
-                                     rep('Open Glutamine w/ No Glucose',
-                                         dim(B82_fluxes)[2]),
-                                     rep('Normal Glutamine w/ No Glucose',
-                                         dim(B82_fluxes)[2])),
-                                   levels=c('Normal', 'Normal Glutamine w/ No Glucose',
-                                            'Open Glutamine w/ No Glucose')),
-                     paired=rep(1:172, 3))
-ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
-  ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
-                     position = ggplot2::position_dodge(0.2)) +
-  ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
-  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=3) +
-  ggplot2::theme_minimal() + 
-  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
-  ggplot2::scale_colour_manual(values=c('Normal'='black',
-                                        'Open Glutamine w/ No Glucose'='darkred',
-                                        'Normal Glutamine w/ No Glucose'='darkred')) +
-  ggplot2::xlab('') +
-  ggplot2::ylab('Flux (mmol/gDW/h)')
-```
-
-#### All together {.unnumbered}
-
-```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=10}
-# Biomass:
-plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B81_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B82_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B83_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B84_fluxes['MAR13082',colnames(B81_fluxes)]),
-                              as.numeric(B85_fluxes['MAR13082',colnames(B81_fluxes)])),
-                     cell_types=rep(metadata[colnames(B81_fluxes),'cell_type'], 6),
-                     medium=factor(c(rep('Normal', dim(B81_fluxes)[2]),
-                                     rep('Open Glutamine w/ Normal Glucose',
-                                         dim(B81_fluxes)[2]),
-                                     rep('No Glutamine w/ Normal Glucose',
-                                         dim(B82_fluxes)[2]),
-                                     rep('Open Glutamine w/ No Glucose',
-                                         dim(B82_fluxes)[2]),
-                                     rep('No Glutamine w/ No Glucose',
-                                         dim(B82_fluxes)[2]),
-                                     rep('Normal Glutamine w/ No Glucose',
-                                         dim(B82_fluxes)[2])),
-                                   levels=c('Normal', 'Open Glutamine w/ Normal Glucose',
-                                            'No Glutamine w/ Normal Glucose',
-                                            'Normal Glutamine w/ No Glucose',
-                                            'Open Glutamine w/ No Glucose',
-                                            'No Glutamine w/ No Glucose')),
-                     paired=rep(1:172, 6))
-ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
-  ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
-                     position = ggplot2::position_dodge(0.2)) +
-  ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
-  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=2) +
-  ggplot2::theme_minimal() + 
-  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
-  ggplot2::scale_colour_manual(values=c('Normal'='black',
-                                        'Open Glutamine w/ Normal Glucose'='darkred',
-                                        'No Glutamine w/ Normal Glucose'='darkred',
-                                        'Open Glutamine w/ No Glucose'='darkred',
-                                        'No Glutamine w/ No Glucose'='darkred',
-                                        'Normal Glutamine w/ No Glucose'='darkred')) +
-  ggplot2::xlab('') +
-  ggplot2::ylab('Flux (mmol/gDW/h)')
-```
 
 
 
@@ -832,7 +735,7 @@ plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B17_flux
                                    levels=c('Normal', 'No Nucleotides')),
                      paired=c(1:172, 1:172))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -858,7 +761,7 @@ plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR07160', colnames(B17_flu
                                    levels=c('Normal', 'No Nucleotides')),
                      paired=c(1:172, 1:172))
 ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
-  ggplot2::geom_boxplot() +
+  ggplot2::geom_boxplot(outlier.shape=NA) +
   ggplot2::geom_line(ggplot2::aes(group=paired), colour='darkgrey', linetype=2,
                      position = ggplot2::position_dodge(0.2)) +
   ggplot2::geom_point(ggplot2::aes(colour=medium, group=paired), position = ggplot2::position_dodge(0.2)) +
@@ -876,9 +779,665 @@ ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
 
 # Gene Essentiality
 
+We tested the capacity of the models to accomplish their objective upon single gene deletions. All genes were deleted individually and the models' objective predicted using ROOM approach. Genes were considered essential when their deletion causes the model to have a 0 in the objective or be infeasible. Nevertheless, we still assessed if the non-essential genes caused a decrease in the objective’s value in some of our analyses.
+
+The most affected pathways were assessed by looking into the percentage of genes in a pathway that were predicted as essential:
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='100%', fig.height=10.5}
+# 0. Load results:
+res_mat = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/percentage_essential_pathways_models.csv', row.names=1, header=TRUE, check.names=FALSE)
+
+# 1. Heatmap with all pathways:
+stt = metadata$state
+stt[stt!='Normal Matched'] = 'Tumour'
+state_colors2 = c('#52854c', '#b30000')
+names(state_colors2) = c('Normal Matched', 'Tumour')
+ht3 = ComplexHeatmap::Heatmap(res_mat,
+                              col = circlize::colorRamp2(c(0, 50, 100),
+                                                         c('blue', 'white', 'red')),
+                              name='% Presence',
+                              column_split = metadata$cell_type,
+                              column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=5.5),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=stt, col=list(cell_type=ct_colors, state=state_colors2), annotation_legend_param = list(cell_type=list(title='Cell Type'), state=list(title='State')), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+
+ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+```
+
+There is a clear group of pathways where most genes are essential for the cells. These pathways are CoA synthesis, heme synthesis, ubiquinone synthesis, protein assembly, phenylalanine metabolism, urea cycle, vitamin B2 metabolism.
+
+Pathways with a considerable amount of essential genes, but not as much as the previous ones, include cholesterol biosynthesis, thiamine metabolism, tryptophan metabolism, sulfur metabolism and glycosphingolipid biosynthesis-globo series.
+
+Next, we plotted how much each pathway is represented within the group of essential genes of a model.
 
 
-# 'Tumour' Medium
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='100%', fig.height=10.5}
+# 0. Load results:
+res_mat2 = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/representation_essential_pathways_models.csv',
+                    row.names=1, header=TRUE, check.names=FALSE)
+
+# 1. Heatmap with all pathways:
+stt = metadata$state
+stt[stt!='Normal Matched'] = 'Tumour'
+state_colors2 = c('#52854c', '#b30000')
+names(state_colors2) = c('Normal Matched', 'Tumour')
+ht3 = ComplexHeatmap::Heatmap(res_mat2,
+                              col = circlize::colorRamp2(c(0, max(res_mat2)/2,
+                                                           max(res_mat2)),
+                                                         c('blue', 'white', 'red')),
+                              name='% Presence',
+                              column_split = metadata$cell_type,
+                              column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=5.5),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=stt, col=list(cell_type=ct_colors, state=state_colors2), annotation_legend_param = list(cell_type=list(title='Cell Type'), state=list(title='State')), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+
+ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+```
+
+A lot of the models’ essential genes encode for enzymes that catalise transport reactions, followed by reactions from the pathways leukotriene metabolism, sphingolipid metabolism, oxidative phosphorilation, and fatty acid oxidation.
+
+After looking into how the essential genes of the different cell-types overlap (next plot), we can see that the cell-type with the most amount of unique essential genes is the proliferative CD4 T-cells, with 93 genes, followed by follicular CD4 (69), proliferative CD8 (32), regulatory CD4 (24), cytotoxic CD8 (20), naïve CD8 (18), naïve CD4 (3), memory CD8 (1), and memory CD4 (1). IL17+ CD4 T-cells have no unique essential genes.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='100%', fig.width=10,fig.height=5}
+essential_genes = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/CT_essential.json', simplifyVector=TRUE)
+
+total_genes = unique(unlist(essential_genes))
+df_plot = matrix(rep(FALSE, length(total_genes)*length(essential_genes)),
+                 ncol=length(essential_genes))
+rownames(df_plot) = total_genes
+colnames(df_plot) = names(essential_genes)
+for(ct in names(essential_genes)){
+  df_plot[essential_genes[[ct]], ct] = TRUE
+}
+
+total_genes_perCT = c()
+for(ct in names(essential_genes)){
+  total_genes_perCT = c(total_genes_perCT, length(essential_genes[[ct]]))
+}
+names(total_genes_perCT) = names(essential_genes)
+total_genes_perCT = sort(total_genes_perCT)
+
+ComplexUpset::upset(as.data.frame(df_plot), names(essential_genes), name='Cell Types',
+                    width_ratio = 0.05, height_ratio = 5,
+                    set_sizes = FALSE,
+                    min_size=3,
+                    base_annotations = list('Intersection size'=ComplexUpset::intersection_size(text=list(vjust=-0.1, hjust=-0.1,angle=45), text_colors = list(on_background='black', on_bar='black')) + ggplot2::ylim(0,100)),
+                    matrix=(ComplexUpset::intersection_matrix(geom=ggplot2::geom_point(size=2))),
+                    stripes=ComplexUpset::upset_stripes(colors=as.vector(ct_colors[names(total_genes_perCT)])))
+
+```
+
+Next are the tables with the essential genes of each cell-type. Information on the pathway they are part of and if they are essential only for that cell-type is available.
+
+## {.unnumbered .tabset}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+genes_pathways = read.csv('./GENERAL/utility_data/genes_subsystems_mapping.csv')
+genes_pathways = unique(genes_pathways[,c('gene', 'gene_symbol', 'pathways')])
+unique_essential = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/unique_essential_ct.json', simplifyVector = TRUE)
+```
+
+### Naive CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Naive CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Naive CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Naive CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Naive CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Naive CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Memory CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Memory CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Memory CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Memory CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Memory CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Memory CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Proliferative CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Proliferative CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Proliferative CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Proliferative CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Proliferative CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Proliferative CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### IL17+ CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`IL17+ CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`IL17+ CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Follicular CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Follicular CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Follicular CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Regulatory CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Regulatory CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Regulatory CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Cytotoxic CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%essential_genes$`Cytotoxic CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_essential$`Cytotoxic CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+## {.tabset .unnumbered}
+
+The genes whose knockout does not turn the model’s objective to zero in more than 90% of the cell-type’s models but still decreases it in more than 90% of the cell-type’s models were organized in the following tables.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+decrease_genes = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/CT_decrease.json', simplifyVector=TRUE)
+unique_decrease = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/unique_decrease_ct.json', simplifyVector = TRUE)
+```
+
+### Naive CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Naive CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Naive CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Naive CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Naive CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Naive CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Memory CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Memory CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Memory CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Memory CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Memory CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Memory CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Proliferative CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Proliferative CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Proliferative CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Proliferative CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Proliferative CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Proliferative CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### IL17+ CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`IL17+ CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`IL17+ CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Follicular CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Follicular CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Follicular CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Regulatory CD4 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Regulatory CD4 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Regulatory CD4 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+### Cytotoxic CD8 Tcells {.unnumbered}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+x = genes_pathways[genes_pathways$gene_symbol%in%decrease_genes$`Cytotoxic CD8 Tcells`,]
+x$unique = NA
+x[x$gene_symbol%in%unique_decrease$`Cytotoxic CD8 Tcells`,'unique'] = 'yes'
+DT::datatable(x, rownames=FALSE, options=list(scrollY='400px', scrollCollapse=TRUE,
+                                              autoWidth=TRUE, paging=FALSE))
+```
+
+## {.unnumbered}
+
+
+## Comparison with Literature
+
+We were able to find two studies that performed gene essentiality using CRISPR screens on CD8+ T-cells. @zhao_essentiality performed gene essentiality in CD8+ T-cells from mice, while @shifrut_essentiality performed it in human CD8+ T-cells.
+
+As such, we compared the results from these studies to the essential genes that were predicted for the CD8 T-cell subtypes (naive, memory, cytotoxic and proliferative). 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# 0. House-keeping genes:
+hk_genes = read.csv('./GENERAL/utility_data/Housekeeping_GenesHuman.csv')
+# 1. Read Zhao's study's essential genes and get only the metabolic genes
+essential_genes_cd8_zhao = xlsx::read.xlsx('./GENERAL/utility_data/gene_essential_studies/CD8_mouse_zhao_etal.xlsx', 1) # In vivo essential genes
+essential_genes_cd8_zhao = toupper(essential_genes_cd8_zhao$Gene)
+essential_genes_cd8_zhao_metabolic = essential_genes_cd8_zhao[essential_genes_cd8_zhao%in%genes_pathways$gene_symbol]
+essential_genes_cd8_zhao_metabolic_hk = essential_genes_cd8_zhao_metabolic[essential_genes_cd8_zhao_metabolic%in%hk_genes$Gene.name]
+essential_genes_cd8_zhao_metabolic_woHK = essential_genes_cd8_zhao_metabolic[!essential_genes_cd8_zhao_metabolic%in%essential_genes_cd8_zhao_metabolic_hk]
+
+# 2. Read Shifrut's study's essential genes and get only the metabolic genes
+essential_genes_cd8_shifrut_r = xlsx::read.xlsx('./GENERAL/utility_data/gene_essential_studies/CD8_human_shifrut_etal.xlsx', 1)
+essential_genes_cd8_shifrut_r = essential_genes_cd8_shifrut_r[!is.na(essential_genes_cd8_shifrut_r$id),]
+essential_genes_cd8_shifrut_r = essential_genes_cd8_shifrut_r[essential_genes_cd8_shifrut_r$neg.lfc <= (-0.1),]
+essential_genes_cd8_shifrut_genes = unique(essential_genes_cd8_shifrut_r$id)
+essential_genes_cd8_shifrut_metabolic = essential_genes_cd8_shifrut_genes[essential_genes_cd8_shifrut_genes%in%genes_pathways$gene_symbol]
+essential_genes_cd8_shifrut_metabolic_hk = essential_genes_cd8_shifrut_metabolic[essential_genes_cd8_shifrut_metabolic%in%hk_genes$Gene.name]
+essential_genes_cd8_shifrut_metabolic_woHK = essential_genes_cd8_shifrut_metabolic[!essential_genes_cd8_shifrut_metabolic%in%essential_genes_cd8_shifrut_metabolic_hk]
+# CD8 Tcells:
+cd8_cells = c('Cytotoxic CD8 Tcells', 'Proliferative CD8 Tcells',
+              'Memory CD8 Tcells', 'Naive CD8 Tcells')
+# Helper function:
+display_venn <- function(x, ...){
+  library(VennDiagram)
+  grid.newpage()
+  venn_object <- venn.diagram(x, filename = NULL, ...)
+  grid.draw(venn_object)
+}
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='60%', fig.align='center'}
+cd8_insilico = unique(unlist(essential_genes[cd8_cells]))
+display_venn(list(silico=cd8_insilico, study=essential_genes_cd8_shifrut_metabolic_woHK,
+                  study2=essential_genes_cd8_zhao_metabolic_woHK),
+             category.names = c("In Silico" , "Shifrut et al (2018)",
+                                "Zhao et al (2021)"),
+             # Circles
+             fill = c("#56B4E9", "#009E73", "#E69F00"),
+             # Numbers
+             cex = 1.5,
+             fontface = "italic",
+             # Set names
+             cat.cex = 1,
+             cat.fontface = "bold",
+             cat.default.pos = "outer",
+             cat.dist = c(-0.055, -0.075, -0.06),
+             # Title
+             main='CD8 Tcells',
+             main.pos = c(.5, 1),
+             main.cex = 1.5,
+             main.fontface = 'bold')
+```
+
+From all the 408 genes predicted as essential in our models, 129 were corroborated by the literature. Of these, 37 were present in both mouse and human studies, while 52 and 40 were present only in human and mouse studies, respectively.
+
+Next, we assessed if the genes reported as essential by the studies but not predicted as such by our models were tested for gene essentiality. These genes include the 160 that were only reported by @zhao_essentiality, the 306 only reported by @shifrut_essentiality, and the 59 reported by both studies. Only the genes that, once deleted, catalise reactions that do not have alternative gene(s) that could carry the reaction were tested for gene essentiality.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='60%', fig.align='center'}
+single_genes_dels = jsonlite::read_json('./GENERAL/utility_data/single_gene_deletion.json', simplifyVector = T)
+gp2 = unique(genes_pathways[,c('gene', 'gene_symbol')])
+not_overlaped_shifrut = essential_genes_cd8_shifrut_metabolic_woHK[!essential_genes_cd8_shifrut_metabolic_woHK%in%cd8_insilico]
+not_overlaped_zhao = essential_genes_cd8_zhao_metabolic_woHK[!essential_genes_cd8_zhao_metabolic_woHK%in%cd8_insilico]
+genes_tested = gp2$gene_symbol[gp2$gene%in%names(single_genes_dels)]
+display_venn(list(shifrut=not_overlaped_shifrut, zhao=not_overlaped_zhao, genes_tested=genes_tested),
+             category.names = c("Shifrut et al (2018)", "Zhao et al (2021)", "Genes Tested"),
+             # Circles
+             fill = c("#009E73", "#E69F00", "grey"),
+             # Numbers
+             cex = 1.5,
+             fontface = "italic",
+             # Set names
+             cat.cex = 1,
+             cat.fontface = "bold",
+             cat.default.pos = "outer",
+             cat.dist = c(-0.075, -0.06, -0.055),
+             # Title
+             main='CD8 Tcells',
+             main.pos = c(.5, 1),
+             main.cex = 1.5,
+             main.fontface = 'bold')
+```
+
+From the total of genes reported by the studies but not predicted as essential by our models, a total of 104 genes were tested, while the other 421 were not considered for essentiality prediction. From the 59 genes predicted as essential by both studies, only 15 were tested, while the other 44 were not.
+
+Regarding the genes that were not tested for essentiality, several reasons might come into place to explain the discrepancy with the studies: *(1)* the gene-protein-reaction (GPR) rules are not completely correct; *(2)* the difference between the T-cells in the studies and those used to create the models; *(3)* the error that comes into creating the models themselves; *(4)* or even the fact that a gene deletion might affect the cell behond the metabolism, like signaling and regulatory pathways.
+
+Regarding the genes tested but not predicted as essential, however, their ability to decrease in more than 50% the models' objective was assessed. Indeed, all the essential genes from studies that were tested but not predicted as essential lead to a decrease in the models' objective:
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, out.width='60%', fig.align='center'}
+cd8_insilico_decrease = unique(unlist(decrease_genes[cd8_cells]))
+not_overlaped_shifrut_butTested = not_overlaped_shifrut[not_overlaped_shifrut
+                                                        %in%genes_tested]
+not_overlaped_zhao_butTested = not_overlaped_zhao[not_overlaped_zhao
+                                                  %in%genes_tested]
+
+display_venn(list(silico=cd8_insilico_decrease, study=not_overlaped_shifrut_butTested,
+                  study2=not_overlaped_zhao_butTested),
+             category.names = c("In Silico (Decrease)" , "Shifrut et al (2018)",
+                                "Zhao et al (2021)"),
+             # Circles
+             fill = c("#56B4E9", "#009E73", "#E69F00"),
+             # Numbers
+             cex = 1.5,
+             fontface = "italic",
+             # Set names
+             cat.cex = 1,
+             cat.fontface = "bold",
+             cat.default.pos = "outer",
+             cat.dist = c(0.07, -0.07, -0.08),
+             # Title
+             main='CD8 Tcells',
+             main.pos = c(.5, 1.05),
+             main.cex = 1.5,
+             main.fontface = 'bold')
+```
+
+
+
+
+
+# Glucose Case
+
+When only removing glucose from medium, biomass only decreases slightly in the cell-types follicular CD4, proliferative CD8, and regulatory CD4 T-cells. In fact, most models in these cell-types do not suffer changes in the biomass flux, with only some suffering from biomass flux decrease. This, however, is not corroborated by literature, as it has been reported decreased T-cell proliferation rates in glucose-deficient media (@metabTasks_CD4).
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
+# Biomass:
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082',colnames(B81_fluxes)]),
+                              as.numeric(B85_fluxes['MAR13082',colnames(B81_fluxes)])),
+                     cell_types=rep(metadata[colnames(B81_fluxes),'cell_type'], 2),
+                     medium=factor(c(rep('Normal', dim(B81_fluxes)[2]),
+                                     rep('No Glucose',
+                                         dim(B82_fluxes)[2])),
+                                   levels=c('Normal', 'No Glucose')))
+ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=4) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
+  ggplot2::scale_colour_manual(values=c('Normal'='black',
+                                        'No Glucose'='darkred')) +
+  ggplot2::xlab('') +
+  ggplot2::ylab('Flux (mmol/gDW/h)')
+```
+
+However, these studies are mainly done in vitro, where not all metabolites present in the blood, for example, are used, and where glucose concentration is significantly higher than phisiological levels. This might affect the observed dependence on glucose by T-cells.
+
+Furthermore, there are enzymes catalised by cells that externally produce glucose from other metabolites in the medium. This is the example of sucrose and glucosylceramide pool (GC pool), which are present in our medium. In fact, we can observe flux going through the reactions that produce glucose from sucrose and GC pool, respectively. In some cell-type models, one can see that this flux increases upon glucose depletion from the medium (follicular CD4 Tcells, naive CD8 Tcells, proliferative CD4 nd CD8, and regulatory Tcells).
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=8}
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR04303', colnames(B81_fluxes)]),
+                              as.numeric(fba_fluxes['MAR12050', colnames(B81_fluxes)]),
+                              as.numeric(B85_fluxes['MAR04303', colnames(B81_fluxes)]),
+                              as.numeric(B85_fluxes['MAR12050', colnames(B81_fluxes)])),
+                     cell_types=rep(metadata[colnames(B81_fluxes),'cell_type'], 4),
+                     medium=factor(c(rep('Normal', dim(B81_fluxes)[2]*2),
+                                     rep('No Glucose', dim(B82_fluxes)[2]*2)),
+                                   levels=c('Normal', 'No Glucose')),
+                     reaction=factor(c(rep('From Sucrose', dim(B81_fluxes)[2]),
+                                     rep('From GC Pool', dim(B82_fluxes)[2]),
+                                     rep('From Sucrose', dim(B81_fluxes)[2]),
+                                     rep('From GC Pool', dim(B82_fluxes)[2])),
+                                   levels=c('From Sucrose', 'From GC Pool')))
+ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::facet_wrap(ggplot2::vars(cell_types, reaction), ncol=4) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
+  ggplot2::scale_colour_manual(values=c('Normal'='black',
+                                        'No Glucose'='darkred')) +
+  ggplot2::xlab('') +
+  ggplot2::ylab('Flux (mmol/gDW/h)')
+```
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+#no_glucose = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/glucose_case/glucose.csv', check.names=FALSE, row.names=1)
+#no_glucose = 2 * ((1 / (1 + exp(-no_glucose))) - 0.5)
+#no_glucosesucrose = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/glucose_case/glucose_sucrose.csv', check.names=FALSE, row.names=1)
+#no_glucosesucrose = 2 * ((1 / (1 + exp(-no_glucosesucrose))) - 0.5)
+#no_glucosegcpool = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/glucose_case/glucose_gcpool.csv', check.names=FALSE, row.names=1)
+#no_glucosegcpool = 2 * ((1 / (1 + exp(-no_glucosegcpool))) - 0.5)
+#no_glucosesucrosegcpool = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/glucose_case/glucose_sucrose_gcpool.csv', check.names=FALSE, row.names=1)
+#no_glucosesucrosegcpool = 2 * ((1 / (1 + exp(-no_glucosesucrosegcpool))) - 0.5)
+```
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=8}
+# Biomass:
+#plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR13082', rownames(metadata)]),
+#                              as.numeric(no_glucose['MAR13082', rownames(metadata)]),
+#                              as.numeric(no_glucosesucrose['MAR13082',
+#                                                           rownames(metadata)]),
+#                              as.numeric(no_glucosegcpool['MAR13082',
+#                                                          rownames(metadata)]),
+#                              as.numeric(no_glucosesucrosegcpool['MAR13082',
+#                                                                 rownames(metadata)])),
+#                     cell_types=rep(metadata$cell_type, 5),
+#                     medium=factor(c(rep('Normal', dim(metadata)[1]),
+#                                     rep('No Glucose', dim(metadata)[1]),
+#                                     rep('No Glucose and Sucrose', dim(metadata)[1]),
+#                                     rep('No Glucose and GC Pool', dim(metadata)[1]),
+#                                     rep('No Glucose, Sucrose, GC Pool',
+#                                         dim(metadata)[1])),
+#                                   levels=c('Normal', 'No Glucose',
+#                                            'No Glucose and Sucrose',
+#                                            'No Glucose and GC Pool',
+#                                            'No Glucose, Sucrose, GC Pool')))
+#ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values, colour=medium)) +
+#  ggplot2::geom_boxplot() +
+#  ggplot2::geom_jitter(ggplot2::aes(colour=medium)) +
+#  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=2) +
+#  ggplot2::theme_minimal() + 
+#  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
+#  ggplot2::scale_colour_manual(values=c('Normal'='black',
+#                                        'No Glucose'='darkred',
+#                                        'No Glucose and Sucrose'='darkred',
+#                                        'No Glucose and GC Pool'='darkred',
+#                                        'No Glucose, Sucrose, GC Pool'='darkred')) +
+#  ggplot2::xlab('') +
+#  ggplot2::ylab('Flux (mmol/gDW/h)')
+```
+
+Also, it is possible to see with our models that the transport of glucose is mainly done through the reaction that represents GLUT1 transporter.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6}
+# Biomass:
+plot_df = data.frame(values=c(as.numeric(fba_fluxes['MAR01378', rownames(metadata)]),
+                              as.numeric(fba_fluxes['MAR05029', rownames(metadata)]),
+                              as.numeric(fba_fluxes['MAR05450', rownames(metadata)]),
+                              as.numeric(fba_fluxes['MAR06895', rownames(metadata)]),
+                              as.numeric(fba_fluxes['MAR08884', rownames(metadata)])),
+                     cell_types=rep(metadata$cell_type, 5),
+                     medium=factor(c(rep('MAR01378', dim(metadata)[1]),
+                                     rep('MAR05029 (GLUT1)', dim(metadata)[1]),
+                                     rep('MAR05450', dim(metadata)[1]),
+                                     rep('MAR06895', dim(metadata)[1]),
+                                     rep('MAR08884', dim(metadata)[1])),
+                                   levels=c('MAR01378', 'MAR05029 (GLUT1)', 'MAR05450',
+                                            'MAR06895', 'MAR08884')),
+                     paired=rep(1:172, 5))
+ggplot2::ggplot(plot_df, ggplot2::aes(x=medium, y=values)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::geom_point(ggplot2::aes(colour=medium), position = ggplot2::position_dodge(0.2)) +
+  ggplot2::facet_wrap(ggplot2::vars(cell_types), ncol=3) +
+  ggplot2::theme_minimal() + 
+  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7), legend.position='none') +
+  ggplot2::xlab('') +
+  ggplot2::ylab('Flux (mmol/gDW/h)')
+```
+
+
+
+# Tumour vs Normal Human Blood Medium
+
+To create the tumour medium, studies with metabolite concentrations from CRC medium were not found. However, 6 studies, through Mass-Spectrometry (MS), calculated the fold changes of the metabolites' intensities in human blood between normal individuals and tumour patients. We found 84 metabolites reported in these studies that are present in our normal human blood medium. With this, we changed their concentration considering the respective fold changes and thus obtaining the tumour human blood medium.
+
+After running FBA with the new medium, we compared the predictions between the two media for each model. After performing a paired statistical test (Wilcoxon signed rank test), we found out that the flux predictions of 71 of the 172 models (approximately 41% of the models) varied significantly when the medium changed.
+
+Of the 71 models whose predictions changed significantly, 7 were cytotoxic CD8 T-cells (~41% of the cytotoxic CD8 models); 3 follicular CD4 (~25%); 3 IL17+ CD4 (~33%); 13 memory CD4 (~46%); 10 memory CD8 (~40%); 16 naive CD4 (~55%); 2 naive CD8 (~25%); 5 prolifrative CD4 (~46%); 3 proliferative CD8 (~50%); and 9 regulatory CD4 (~33%).
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=3, fig.align='center'}
+test_results_nvst = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/4_tumourMedium/normal_vs_tumour.csv', row.names=1, header=T)
+
+perc_df = data.frame(fdr=test_results_nvst$p_adjust,
+                     difference=test_results_nvst$p_adjust < 0.05,
+                     cell_type = metadata[rownames(test_results_nvst), 'cell_type'],
+                     state = metadata[rownames(test_results_nvst), 'state'])
+perc_df$state[grep('Tumour', perc_df$state)] = 'Tumour'
+perc_df$cell_type = factor(perc_df$cell_type, levels=names(ct_colors))
+
+x = table(metadata[rownames(test_results_nvst), 'cell_type'][test_results_nvst$p_adjust < 0.05]) / table(metadata$cell_type) * 100
+perc_df2 = data.frame(difference=as.numeric(x), cell_type = names(x))
+
+number = ggplot2::ggplot(perc_df[perc_df$difference,], ggplot2::aes(cell_type, fill=cell_type)) +
+  ggplot2::geom_bar() + ggplot2::scale_fill_manual(values=ct_colors) +
+  ggplot2::theme(axis.text.x=ggplot2::element_blank(), legend.position = 'none') +
+  #ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1, size=7)) +
+  ggplot2::ylab('Number of Models') + ggplot2::xlab('Cell Types')
+
+percentage = ggplot2::ggplot(perc_df2, ggplot2::aes(x=cell_type, y=difference, fill=cell_type)) +
+  ggplot2::geom_bar(stat='identity') + ggplot2::scale_fill_manual(values=ct_colors) +
+  ggplot2::theme(axis.text.x=ggplot2::element_blank()) +
+  ggplot2::ylab('Percentage') + ggplot2::xlab('Cell Types') + ggplot2::ylim(0, 60)
+
+number | percentage
+```
+
+We then took a look into the top 15 pathways most affected by the medium change, as well as the top 15 least affected ones. This was assessed by calculating, on average across all models, the percentage of reactions in a pathway with different fluxes between the two media.
+
+Two pathways did not have any reactions changing in any of the models: *dietary fiber binding* and *CoA metabolism*.
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height=6, fig.align='center'}
+normal_medium = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/FBA/normal_FBA.csv', row.names=1, header=TRUE, check.names=FALSE)
+normal_medium = 2 * ((1 / (1 + exp(-normal_medium))) - 0.5)
+tumour_medium = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/4_tumourMedium/normal_FBA.csv', row.names=1, header=TRUE, check.names=FALSE)
+tumour_medium = 2 * ((1 / (1 + exp(-tumour_medium))) - 0.5)
+
+# Metadata:
+diff_models = colnames(tumour_medium)[test_results_nvst$p_adjust < 0.05]
+metadata_diff = metadata
+metadata_diff$if_diff = rep('No', dim(metadata)[1])
+metadata_diff[diff_models, 'if_diff'] = 'Yes'
+
+# For each model, check what reactions differ:
+rxns_subsystems = jsonlite::read_json('./GENERAL/utility_data/reactions_subsystems_mapping.json', simplifyVector=TRUE)
+rxns = c()
+paths = c()
+for(rxn in rownames(tumour_medium)){
+  rxns = c(rxns, rep(rxn, length(rxns_subsystems[[rxn]])))
+  paths = c(paths, rxns_subsystems[[rxn]])
+}
+
+rxn_changes = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/4_tumourMedium/rxn_changes.json', simplifyVector=TRUE)
+
+# Get % of reactions in subsystems that changed:
+perc_changed_paths = matrix(rep(0, length(unique(paths))*length(rxn_changes)),
+                            ncol=length(rxn_changes))
+rownames(perc_changed_paths) = unique(paths)
+colnames(perc_changed_paths) = names(rxn_changes)
+for(model in names(rxn_changes)){
+  for(path in unique(paths)){
+    rxns_path = rxn_changes[[model]]$pathway == path
+    n_rxns_changed = sum(rxn_changes[[model]]$state[rxns_path] != 'Unchanged')
+    perc_changed_paths[path, model] = n_rxns_changed / sum(rxns_path)
+  }
+}
+# Mean percentage per pathway across all models:
+mean_perc_models = rowMeans(perc_changed_paths)
+top15_most = sort(mean_perc_models, decreasing=T)[1:15] # Top 20 most affected pathways
+top15_least = sort(mean_perc_models)[1:15] # Top 20 least affected pathways
+# Visualize the percentages:
+stt = metadata_diff$state
+stt[stt!='Normal Matched'] = 'Tumour'
+state_colors2 = c('#52854c', '#b30000')
+names(state_colors2) = c('Normal Matched', 'Tumour')
+heat_perc = ComplexHeatmap::Heatmap(perc_changed_paths[c(names(top15_least), names(top15_most)), rownames(metadata_diff)], column_split = metadata_diff$cell_type, row_split = c(rep('Least', 15), rep('Most', 15)), column_title = NULL, row_title = NULL, show_column_names = FALSE, row_names_gp = grid::gpar(fontsize=7), heatmap_legend_param = list(title='% Affected reactions', title_position = "lefttop-rot"), top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata_diff$cell_type, state=stt, if_diff=metadata_diff$if_diff, col=list(cell_type=ct_colors, state=state_colors2, if_diff=c('Yes'='lightgreen', 'No'='grey')), annotation_legend_param = list(cell_type=list(title='Cell Type', title_position = "lefttop-rot"), state=list(title='State', title_position = "lefttop-rot"), if_diff=list(title='N-T Difference', title_position = "lefttop-rot")), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+
+ComplexHeatmap::draw(heat_perc, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+```
+
+Among the most affected pathways are oxidative phosphorilation, pentose phosphate pathway, glycolysis / gluconeogenesis, and pathways related to $\beta$-Oxidation of fatty acids and carnithine shuttle.
 
 
 # References {.unnumbered}

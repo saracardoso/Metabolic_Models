@@ -5,6 +5,7 @@ if __name__ == '__main__':
     from os import listdir, mkdir
     from pandas import read_csv
     from dill import dump, load
+    import json
 
     from cobra.io import read_sbml_model
 
@@ -72,25 +73,32 @@ if __name__ == '__main__':
             # Reconstruct ...
             print('\n.... Reconstruction')
             reconstructions[individual][sample] = ReconstructModel(HumanGEM, samp_fullpath, genesMapping_file)
-            reconstructions[individual][sample].run(media_rxns)
+            #reconstructions[individual][sample].run(media_rxns)
+            data_info = reconstructions[individual][sample].retrieve_data_info()
             # Get number of active reactions ...
             print('\n.... Get Reaction Numbers')
-            for cell_type in reconstructions[individual][sample].reconstructed_models_names:
-                count = 0
-                for reaction in reconstructions[individual][sample].reconstructed_models[cell_type].reactions:
-                    if reaction.bounds != (0, 0):
-                        count += 1
-                nReactions_reconstruction.loc[cell_type, sample] = count
+            #for cell_type in reconstructions[individual][sample].reconstructed_models_names:
+            #    count = 0
+            #    for reaction in reconstructions[individual][sample].reconstructed_models[cell_type].reactions:
+            #        if reaction.bounds != (0, 0):
+            #            count += 1
+            #    nReactions_reconstruction.loc[cell_type, sample] = count
             # Save reconstruction ...
             print('\n.... Save object and results\n')
             if not isdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual)):
                 mkdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual))
             file_reconstruction_dump_object = join(CRCatlasReconstruction_dir, 'NormalMatched', individual,
                                                    ''.join(('01_', sample, '.obj')))
-            with open(file_reconstruction_dump_object, 'wb') as dump_file:
-                dump(reconstructions[individual][sample], dump_file)
-        nReactions_reconstruction.to_csv(join(CRCatlasReconstruction_dir, 'NormalMatched', individual,
-                                              '1_nReactionsReconstruction.csv'))
+            #with open(file_reconstruction_dump_object, 'wb') as dump_file:
+            #    dump(reconstructions[individual][sample], dump_file)
+            if not isdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual, 'data_info')):
+                mkdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual, 'data_info'))
+            xx = join(CRCatlasReconstruction_dir, 'NormalMatched', individual, 'data_info')
+            data_info['CPM'].to_csv(join(xx, ''.join((sample, '_CPM', '.csv'))))
+            data_info['TAS'].to_csv(join(xx, ''.join((sample, '_TAS', '.csv'))))
+            data_info['RAS'].to_csv(join(xx, ''.join((sample, '_RAS', '.csv'))))
+        #nReactions_reconstruction.to_csv(join(CRCatlasReconstruction_dir, 'NormalMatched', individual,
+        #                                      '1_nReactionsReconstruction.csv'))
 
     '''
     Biomass GapFill

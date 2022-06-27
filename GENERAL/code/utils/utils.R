@@ -403,3 +403,38 @@ important_reactions_Tcells[['putrescine_production']] = c('MAR06961', 'MAR04212'
 jsonlite::write_json(important_reactions_Tcells,
                      './GENERAL/utility_data/important_reactions_Tcells.json')
 
+
+
+
+
+
+# ################################################################## #
+# GET REACTIONS TO KNOCKOUT WHEN A SINGLE GENE DELETION IS PERFORMED #
+# ################################################################## #
+
+gprs = read.csv('./GENERAL/utility_data/HumanGEM-1.8.0_consistent_GPRs.txt', sep='\t',
+                row.names=1, header=F)
+
+genes_rxns = list()
+for(rxn in rownames(gprs)){
+  message(rxn)
+  gpr = gprs[rxn,1]
+  or_sep = strsplit(gpr, ' or ')[[1]]
+  if(length(or_sep)==1){ # rxns with an or in their gpr means that a gene deletion always have an
+    #alternative so that the reaction works. So, only those without ors can be used for single deletion
+    and_genes = strsplit(gpr, ' and ')[[1]]
+    for(gene in and_genes){
+      genes_rxns[[gene]] = c(genes_rxns[[gene]], rxn)
+    }
+  }
+}
+for(gene in c('ENSG00000005075', 'ENSG00000013503', 'ENSG00000047315', 'ENSG00000058600', 'ENSG00000066379', 
+  'ENSG00000068654', 'ENSG00000099817', 'ENSG00000099821', 'ENSG00000100142', 'ENSG00000100413', 
+  'ENSG00000102978', 'ENSG00000105258', 'ENSG00000107951', 'ENSG00000125630', 'ENSG00000132664', 
+  'ENSG00000137054', 'ENSG00000144231', 'ENSG00000147669', 'ENSG00000148606', 'ENSG00000161980', 
+  'ENSG00000163882', 'ENSG00000168002', 'ENSG00000168495', 'ENSG00000171453', 'ENSG00000177700', 
+  'ENSG00000181222', 'ENSG00000186141', 'ENSG00000186184')){
+  genes_rxns[[gene]] = c(genes_rxns[[gene]], 'MAR07161', 'MAR07162')
+}
+jsonlite::write_json(genes_rxns,
+                     '/home/scardoso/Documents/PhD/Metabolic_Models/GENERAL/utility_data/single_gene_deletion.json')

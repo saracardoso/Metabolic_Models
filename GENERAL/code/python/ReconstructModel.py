@@ -49,7 +49,7 @@ class ReconstructModel(object):
         global_min, global_max = np.quantile(self.expression['processed_counts'], [.1, .75])
         local_thresholds = np.quantile(self.expression['processed_counts'], [.25], axis=1)[0]
 
-        tas_counts = np.array(self.expression['raw_counts'].copy())
+        tas_counts = np.array(self.expression['processed_counts'].copy())
         active = tas_counts >= global_max
         inactive = tas_counts <= global_min
         moderate = np.where(np.logical_and(tas_counts > global_min, tas_counts < global_max))
@@ -143,3 +143,15 @@ class ReconstructModel(object):
                     new_model.reactions[r_idx].knock_out()
             self.reconstructed_models[col] = new_model
         print('Done!')
+
+    def retrieve_data_info(self):
+        if 'tas_counts' not in self.expression.keys():
+            self._calculate_tas()
+            self._convert_gene_ids()
+            self._get_ras()
+        data_info = {'CPM': self.expression['processed_counts'],
+                     'TAS': self.reconstruction_inputs['TAS'],
+                     'RAS': self.reconstruction_inputs['RAS']}
+        return data_info
+
+
