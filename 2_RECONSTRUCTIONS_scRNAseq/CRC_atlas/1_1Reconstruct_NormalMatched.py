@@ -5,7 +5,7 @@ if __name__ == '__main__':
     from os import listdir, mkdir
     from pandas import read_csv
     from dill import dump, load
-    import json
+    # import json
 
     from cobra.io import read_sbml_model
 
@@ -20,6 +20,9 @@ if __name__ == '__main__':
                       'Cytotoxic CD8 Tcells', 'Memory CD8 Tcells', 'Proliferative CD8 Tcells', 'CXCL13+ CD8 Tcells',
                       'gdTcells', 'Double-Negative Tcells', 'CD8aa IELs', 'LTi cells', 'NK cells', 'NKT cells',
                       'Naive Bcells', 'Memory Bcells', 'Proliferative Bcells', 'Plasma cells']
+    tcells = ['Naive CD4 Tcells', 'Memory CD4 Tcells', 'Proliferative CD4 Tcells', 'Regulatory CD4 Tcells',
+              'IL17+ CD4 Tcells', 'IL22+ CD4 Tcells', 'Follicular CD4 Tcells', 'Naive CD8 Tcells',
+              'Cytotoxic CD8 Tcells', 'Memory CD8 Tcells', 'Proliferative CD8 Tcells']
 
     '''
     Directories and files
@@ -59,46 +62,47 @@ if __name__ == '__main__':
     print('\nReconstructing models...')
     individuals = listdir(CRCatlasNormalMatched_dir)
     reconstructions = {}
-    for individual in individuals:
+    for individual in ['31']: # individuals:
         print('.. ', individual)
         reconstructions[individual] = {}
         samples = listdir(join(CRCatlasNormalMatched_dir, individual))
         samples = [samp.replace('.csv', '') for samp in samples]
-        nReactions_reconstruction = np.empty((len(all_cell_types), len(samples)))
+        nReactions_reconstruction = np.empty((len(tcells), len(samples)))
         nReactions_reconstruction[:] = np.NaN
-        nReactions_reconstruction = pd.DataFrame(nReactions_reconstruction, index=all_cell_types, columns=samples)
+        nReactions_reconstruction = pd.DataFrame(nReactions_reconstruction, index=tcells, columns=samples)
         for sample in samples:
             samp_fullpath = join(CRCatlasNormalMatched_dir, individual, ''.join((sample, '.csv')))
             print('... ', sample)
             # Reconstruct ...
             print('\n.... Reconstruction')
-            reconstructions[individual][sample] = ReconstructModel(HumanGEM, samp_fullpath, genesMapping_file)
-            #reconstructions[individual][sample].run(media_rxns)
+            reconstructions[individual][sample] = ReconstructModel(HumanGEM, samp_fullpath, genesMapping_file,
+                                                                   raw_counts_cols=tcells)
+            reconstructions[individual][sample].run(media_rxns)
             data_info = reconstructions[individual][sample].retrieve_data_info()
             # Get number of active reactions ...
             print('\n.... Get Reaction Numbers')
-            #for cell_type in reconstructions[individual][sample].reconstructed_models_names:
-            #    count = 0
-            #    for reaction in reconstructions[individual][sample].reconstructed_models[cell_type].reactions:
-            #        if reaction.bounds != (0, 0):
-            #            count += 1
-            #    nReactions_reconstruction.loc[cell_type, sample] = count
+            for cell_type in reconstructions[individual][sample].reconstructed_models_names:
+                count = 0
+                for reaction in reconstructions[individual][sample].reconstructed_models[cell_type].reactions:
+                    if reaction.bounds != (0, 0):
+                        count += 1
+                nReactions_reconstruction.loc[cell_type, sample] = count
             # Save reconstruction ...
             print('\n.... Save object and results\n')
             if not isdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual)):
                 mkdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual))
             file_reconstruction_dump_object = join(CRCatlasReconstruction_dir, 'NormalMatched', individual,
                                                    ''.join(('01_', sample, '.obj')))
-            #with open(file_reconstruction_dump_object, 'wb') as dump_file:
-            #    dump(reconstructions[individual][sample], dump_file)
+            with open(file_reconstruction_dump_object, 'wb') as dump_file:
+                dump(reconstructions[individual][sample], dump_file)
             if not isdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual, 'data_info')):
                 mkdir(join(CRCatlasReconstruction_dir, 'NormalMatched', individual, 'data_info'))
             xx = join(CRCatlasReconstruction_dir, 'NormalMatched', individual, 'data_info')
             data_info['CPM'].to_csv(join(xx, ''.join((sample, '_CPM', '.csv'))))
             data_info['TAS'].to_csv(join(xx, ''.join((sample, '_TAS', '.csv'))))
             data_info['RAS'].to_csv(join(xx, ''.join((sample, '_RAS', '.csv'))))
-        #nReactions_reconstruction.to_csv(join(CRCatlasReconstruction_dir, 'NormalMatched', individual,
-        #                                      '1_nReactionsReconstruction.csv'))
+        nReactions_reconstruction.to_csv(join(CRCatlasReconstruction_dir, 'NormalMatched', individual,
+                                              '1_nReactionsReconstruction.csv'))
 
     '''
     Biomass GapFill
@@ -130,9 +134,9 @@ if __name__ == '__main__':
         print('.. ', indiv)
         gapfilled_models[indiv] = {}
 
-        nReactions_gafills = np.empty((len(all_cell_types), len(samples)))
+        nReactions_gafills = np.empty((len(tcells), len(samples)))
         nReactions_gafills[:] = np.NaN
-        nReactions_gafills = pd.DataFrame(nReactions_gafills, index=all_cell_types, columns=samples)
+        nReactions_gafills = pd.DataFrame(nReactions_gafills, index=tcells, columns=samples)
 
         for samp in samples:
             gapfilled_models[indiv][samp] = {}

@@ -26,10 +26,11 @@ class ReconstructModel(object):
         if raw_counts_cols is None:
             self.expression = {'raw_counts': rc}
         else:
-            if not set(raw_counts_cols).issubset(rc.columns.to_list()):
+            common = list(set(raw_counts_cols) & set(rc.columns.to_list()))
+            if len(common) == 0:
                 ValueError('Invalid raw_counts_cols.')
             else:
-                self.expression = {'raw_counts': rc[raw_counts_cols]}
+                self.expression = {'raw_counts': rc[common]}
         self._cpm()
         # TAS, and RAS, scores for only the genes in the generic model will be stored in a dictionary, as well as
         # FASTCORE input parameters will be stored here:
