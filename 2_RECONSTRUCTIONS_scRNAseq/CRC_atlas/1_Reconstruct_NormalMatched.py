@@ -3,8 +3,10 @@ if __name__ == '__main__':
     import pandas as pd
     from os.path import join, isdir
     from os import listdir, mkdir
-    from pandas import read_csv
+    from pandas import read_csv, concat, Series
     from dill import dump, load
+    from re import search
+    from gc import collect
     # import json
 
     from cobra.io import read_sbml_model
@@ -21,7 +23,7 @@ if __name__ == '__main__':
                       'gdTcells', 'Double-Negative Tcells', 'CD8aa IELs', 'LTi cells', 'NK cells', 'NKT cells',
                       'Naive Bcells', 'Memory Bcells', 'Proliferative Bcells', 'Plasma cells']
     tcells = ['Naive CD4 Tcells', 'Memory CD4 Tcells', 'Proliferative CD4 Tcells', 'Regulatory CD4 Tcells',
-              'IL17+ CD4 Tcells', 'IL22+ CD4 Tcells', 'Follicular CD4 Tcells', 'Naive CD8 Tcells',
+              'IL17+ CD4 Tcells', 'Follicular CD4 Tcells', 'Naive CD8 Tcells',
               'Cytotoxic CD8 Tcells', 'Memory CD8 Tcells', 'Proliferative CD8 Tcells']
 
     '''
@@ -62,7 +64,7 @@ if __name__ == '__main__':
     print('\nReconstructing models...')
     individuals = listdir(CRCatlasNormalMatched_dir)
     reconstructions = {}
-    for individual in ['31']: # individuals:
+    for individual in individuals:
         print('.. ', individual)
         reconstructions[individual] = {}
         samples = listdir(join(CRCatlasNormalMatched_dir, individual))
@@ -142,12 +144,12 @@ if __name__ == '__main__':
             gapfilled_models[indiv][samp] = {}
             models = list(reconstructions[indiv][samp].reconstructed_models.keys())
 
-            biomass_gapfils = np.empty((len(models), 4))
+            biomass_gapfils = np.empty((len(models), 2))
             biomass_gapfils[:] = np.NaN
             biomass_gapfils_b = pd.DataFrame(biomass_gapfils.copy(), index=models,
-                                             columns=['Plasmax', 'HPLM', 'Blood_SMDB', 'Default'])
+                                             columns=['Blood_SMDB', 'Default'])
             biomass_gapfils_a = pd.DataFrame(biomass_gapfils.copy(), index=models,
-                                             columns=['Plasmax', 'HPLM', 'Blood_SMDB', 'Default'])
+                                             columns=['Blood_SMDB', 'Default'])
 
             print('... ', samp)
             for model in models:
@@ -180,3 +182,46 @@ if __name__ == '__main__':
         nReactions_gafills.to_csv(join(CRCatlasReconstruction_dir, 'NormalMatched', indiv,
                                        '2_nReactionsGapFill.csv'))
 
+    '''
+    Reaction Presence
+    '''
+
+    # THIS NEXT CODE IS RUN AFTER 2_GET_MODELS_META.R
+    CRCReconstructionNormalMatched_dir = join(CRCatlasReconstruction_dir, 'NormalMatched')
+    CRCatlas_meta = join(CRCReconstructionNormalMatched_dir, 'metadata.csv')
+    models_to_run = read_csv(CRCatlas_meta, index_col=0).index.tolist()
+    individuals = listdir(CRCReconstructionNormalMatched_dir)
+    reactions_df = None
+    models_names = []
+    for indiv in individuals:
+        if search('[.]', indiv):
+            next
+        print('\n', indiv)
+        # Get files that starts with 02_
+        indiv_samples = [file for file in listdir(join(CRCReconstructionNormalMatched_dir, indiv))
+                         if file.startswith('02_')]
+        for samp in indiv_samples:
+            samp_name = samp.replace('.obj', '').replace('02_', '')
+            print('- ', samp_name)
+            with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
+                temp_dump = load(dump_file)
+                for cell_type, model in temp_dump.items():
+                    print('--', cell_type)
+                    model_name = '_'.join((indiv, samp_name, cell_type))
+                    if model_name in models_to_run:
+                        rxn_vec = [0] * len(model.reactions)
+                        rxn_ids = []
+                        for idx, rxn in enumerate(model.reactions):
+                            if rxn.bounds != (0, 0):
+                                rxn_vec[idx] = 1
+                            rxn_ids.append(rxn.id)
+                        models_names.append(model_name)
+                        if reactions_df is None:
+                            reactions_df = concat([Series(rxn_vec)], axis=1)
+                        else:
+                            reactions_df = concat([reactions_df, Series(rxn_vec)], axis=1)
+                del temp_dump
+                collect()
+    reactions_df.columns = models_names
+    reactions_df.index = rxn_ids
+    reactions_df.to_csv(join(CRCReconstructionNormalMatched_dir, 'Genes_to_Fluxes/reaction_presence.csv'))

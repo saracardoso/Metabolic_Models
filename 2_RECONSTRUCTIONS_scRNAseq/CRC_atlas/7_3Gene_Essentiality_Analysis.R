@@ -117,10 +117,10 @@ pathways_rxns = c(rep('Prostaglandins', 17), rep('Leukotrienes', 8))
 
 # 1. CPM Counts
 # 1.1. With PTGES3
-max_cpm = max(cpm_counts_tcells)
+max_cpm = max(cpm_counts_tcells[genes, ])
 ht_genes = ComplexHeatmap::Heatmap(cpm_counts_tcells[genes, ],
                                    col = circlize::colorRamp2(c(0, max_cpm/2, max_cpm),
-                                                              c('lightgrey', 'lightgrey', 'red')),
+                                                              c('blue', 'lightgrey', 'red')),
                         show_column_names = FALSE,
                         column_split = metadata[colnames(cpm_counts_tcells),'cell_type'],
                         column_title = NULL,

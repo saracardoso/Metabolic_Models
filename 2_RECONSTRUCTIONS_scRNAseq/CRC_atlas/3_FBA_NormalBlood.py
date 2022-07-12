@@ -22,14 +22,14 @@ if __name__ == '__main__':
 
     # Files:
     tcells_media_file = join(utilityData_dir, 'media_Tcells_8percSerum.csv')
-    CRCatlas_sampling_file = join(CRCReconstruction_dir, 'CRCatlas_sampling.json')
+    CRCatlas_meta = join(CRCReconstructionNormalMatched_dir, 'metadata.csv')
     HumanGem_file = join(HumanGEM_dir, 'HumanGEM-1.8.0_consistent.xml.gz')
 
     '''
     Run FBA under normal medium conditions
     '''
 
-    CRCatlas_sampling = json.load(open(CRCatlas_sampling_file))
+    models_to_run = read_csv(CRCatlas_meta, index_col=0).index.tolist()
     individuals = listdir(CRCReconstructionNormalMatched_dir)
     predicted_fluxes = None
     models_names = []
@@ -46,7 +46,8 @@ if __name__ == '__main__':
             with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
                 temp_dump = load(dump_file)
                 for cell_type, model in temp_dump.items():
-                    if cell_type in CRCatlas_sampling['NormalMatched'][indiv]['control'][samp_name]:
+                    model_name = '_'.join((indiv, samp_name, cell_type))
+                    if model_name in models_to_run:
                         print('--', cell_type)
                         # Get SMDB medium
                         media = read_csv(tcells_media_file, index_col='ID')
@@ -61,7 +62,7 @@ if __name__ == '__main__':
                         solFBA = model.optimize(objective_sense='maximize')
                         # solFBA = pfba(model)
                         # Save predicted fluxes
-                        models_names.append('_'.join((indiv, samp_name, cell_type)))
+                        models_names.append(model_name)
                         if predicted_fluxes is None:
                             predicted_fluxes = concat([solFBA.fluxes], axis=1)
                         else:
@@ -69,60 +70,28 @@ if __name__ == '__main__':
                 del temp_dump
                 collect()
     predicted_fluxes.columns = models_names
-    predicted_fluxes.to_csv(join(CRCReconstructionNormalMatched_dir, '1_control_analysis/FBA/normal_FBA.csv'))
+    predicted_fluxes.to_csv(join(CRCReconstructionNormalMatched_dir, 'FBA/Normal_Blood.csv'))
 
     '''
     Evaluations upon medium changes
     '''
 
     # Run FBA in the different conditions:
-    conditions = json.load(open(join(utilityData_dir, 'sampling_evals_Tcells.json')))
-    CRCatlas_sampling = json.load(open(CRCatlas_sampling_file))
-    predicted_fluxes = read_csv(join(CRCReconstructionNormalMatched_dir, '1_control_analysis/FBA/normal_FBA.csv'),
+    conditions = json.load(open(join(utilityData_dir, 'evals_Tcells.json')))
+    models_to_run = read_csv(CRCatlas_meta, index_col=0).index.tolist()
+    predicted_fluxes = read_csv(join(CRCReconstructionNormalMatched_dir, 'FBA/Normal_Blood.csv'),
                                 index_col=0)
+    individuals = ['31', '32', '33', '35', 'KUL01', 'KUL19', 'KUL21', 'SMC01', 'SMC04', 'SMC06', 'SMC07',
+                   'SMC08', 'SMC10']
 
-    for condition_id in conditions.keys():
+    for condition_id in ['B6.1', 'B6.2', 'B8.1', 'B8.2_and_B9', 'B8.4', 'B8.5', 'B11', 'B12.1',
+                         'B12.2', 'B12.3', 'B16', 'B17']:#['B1', 'B2', 'B4', 'B6.1', 'B6.2', 'B8.1', 'B8.2_and_B9', 'B8.4', 'B8.5', 'B11', 'B12.1',
+                         #'B12.2', 'B12.3', 'B16', 'B17']:
         print('\n', condition_id)
         res_fluxes = helper_fba_condition_normalmatched(conditions[condition_id], tcells_media_file,
-                                                        'Blood_SMDB', CRCatlas_sampling,
+                                                        'Blood_SMDB', models_to_run,
                                                         CRCReconstructionNormalMatched_dir,
+                                                        individuals,
                                                         fba_results=predicted_fluxes)
-        res_fluxes.to_csv(''.join((CRCReconstructionNormalMatched_dir, '/2_abnormal_medium/predicted_fluxes/',
+        res_fluxes.to_csv(''.join((CRCReconstructionNormalMatched_dir, '/FBA/medium_changes/',
                                    condition_id, '.csv')))
-
-    '''
-    Get reaction presence of models
-    '''
-    individuals = listdir(CRCReconstructionNormalMatched_dir)
-    reactions_presence = DataFrame()
-    CRCatlas_sampling = json.load(open(CRCatlas_sampling_file))
-    for indiv in individuals:
-        if search('[.]', indiv):
-            next
-        print('\n', indiv)
-        # Get files that starts with 02_
-        indiv_samples = [file for file in listdir(join(CRCReconstructionNormalMatched_dir, indiv)) if
-                         file.startswith('02_')]
-        for samp in indiv_samples:
-            samp_name = samp.replace('.obj', '').replace('02_', '')
-            print('- ', samp_name)
-            with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
-                temp_dump = load(dump_file)
-                for cell_type, model in temp_dump.items():
-                    if cell_type in CRCatlas_sampling['NormalMatched'][indiv]['control'][samp_name] and cell_type in [
-                        'Naive CD8 Tcells', 'Memory CD8 Tcells', 'Cytotoxic CD8 Tcells', 'Proliferative CD8 Tcells',
-                        'Naive CD4 Tcells', 'Memory CD4 Tcells', 'Proliferative CD4 Tcells', 'IL17+ CD4 Tcells',
-                        'Follicular CD4 Tcells', 'Regulatory CD4 Tcells']:
-                        with_bounds = []
-                        rxn_ids = []
-                        for i in range(0, len(model.reactions)):
-                            rxn_ids.append(model.reactions[i].id)
-                            if model.reactions[i].bounds == (0, 0):
-                                with_bounds.append(0)
-                            else:
-                                with_bounds.append(1)
-                        reactions_presence['_'.join((indiv, samp_name, cell_type))] = with_bounds
-                del temp_dump
-                collect()
-    reactions_presence = reactions_presence.set_axis(rxn_ids, axis='index')
-    reactions_presence.to_csv(''.join((CRCReconstruction_dir, '/general/reaction_presence_Tcells.csv')))

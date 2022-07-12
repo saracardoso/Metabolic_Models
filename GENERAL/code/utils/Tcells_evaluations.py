@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     # 3. Save dictionary in json file:
     print('\nSaving evaluations into a json file...')
-    with open(join(utilityData_dir, 'sampling_evals_Tcells.json'), 'w') as f:
+    with open(join(utilityData_dir, 'evals_Tcells.json'), 'w') as f:
         json.dump(evals, f)
 
     print('\nDone!')

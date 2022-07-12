@@ -25,23 +25,22 @@ if __name__ == '__main__':
     # Files:
     tcells_media_file = join(utilityData_dir, 'media_Tcells_8percSerum.csv')
     single_gene_deletion_file = join(utilityData_dir, 'single_gene_deletion.json')
-    CRCatlas_sampling_file = join(CRCReconstruction_dir, 'CRCatlas_sampling.json')
+    CRCatlas_meta = join(CRCReconstructionNormalMatched_dir, 'metadata.csv')
 
     '''
     Run single gene deletions
     '''
 
-    CRCatlas_sampling = json.load(open(CRCatlas_sampling_file))
+    models_to_run = read_csv(CRCatlas_meta, index_col=0).index.tolist()
     genes_rxns_toTest = json.load(open(single_gene_deletion_file))
-    predicted_fluxes = read_csv(join(CRCReconstructionNormalMatched_dir, '1_control_analysis/FBA/normal_FBA.csv'),
+    predicted_fluxes = read_csv(join(CRCReconstructionNormalMatched_dir, 'FBA/Normal_Blood.csv'),
                                 index_col=0)
-    individuals = listdir(CRCReconstructionNormalMatched_dir)
+    individuals = ['31', '32', '33', '35', 'KUL01', 'KUL19', 'KUL21', 'SMC01', 'SMC04', 'SMC06', 'SMC07',
+                   'SMC08', 'SMC10']
     gene_essentiality_growth = None
     gene_essentiality_status = None
     models_names = []
     for indiv in individuals:
-        if search('[.]', indiv):
-            next
         print('\n', indiv)
         # Get files that starts with 02_
         indiv_samples = [file for file in listdir(join(CRCReconstructionNormalMatched_dir, indiv))
@@ -52,13 +51,14 @@ if __name__ == '__main__':
             with open(join(CRCReconstructionNormalMatched_dir, indiv, samp), 'rb') as dump_file:
                 temp_dump = load(dump_file)
                 for cell_type, model in temp_dump.items():
-                    if cell_type in CRCatlas_sampling['NormalMatched'][indiv]['control'][samp_name]:
+                    model_name = '_'.join((indiv, samp_name, cell_type))
+                    if model_name in models_to_run:
                         print('--', cell_type)
                         # Get SMDB medium
                         media = read_csv(tcells_media_file, index_col='ID')
                         model.medium = media['Blood_SMDB'].to_dict()
                         # Get objective
-                        fba_orignal_fluxes = predicted_fluxes.loc[:, '_'.join((indiv, samp_name, cell_type))]
+                        fba_orignal_fluxes = predicted_fluxes.loc[:, model_name]
                         if cell_type in ['Proliferative CD4 Tcells', 'Proliferative CD8 Tcells']:
                             model.objective = {model.reactions.MAR13082: 1}
                             fba_orig_value = fba_orignal_fluxes['MAR13082']
@@ -78,7 +78,7 @@ if __name__ == '__main__':
                             new_indexes.append(x)
                         res_gess = res_gess.set_axis(new_indexes, axis=0)
                         # Save results:
-                        models_names.append('_'.join((indiv, samp_name, cell_type)))
+                        models_names.append(model_name)
                         if gene_essentiality_growth is None:
                             gene_essentiality_growth = concat([Series(res_gess['growth'].to_list())], axis=1)
                             gene_essentiality_status = concat([Series(res_gess['status'].to_list())], axis=1)
@@ -95,9 +95,9 @@ if __name__ == '__main__':
     gene_essentiality_status = gene_essentiality_status.set_axis(new_indexes, axis=0)
 
     gene_essentiality_growth.to_csv(''.join((CRCReconstructionNormalMatched_dir,
-                                             '/3_gene_essentiality/origObj_growth2.csv')))
+                                             '/Gene_essentiality/growth.csv')))
     gene_essentiality_status.to_csv(''.join((CRCReconstructionNormalMatched_dir,
-                                             '/3_gene_essentiality/origObj_status2.csv')))
+                                             '/Gene_essentiality/status.csv')))
 
     '''
     Check glucose case:

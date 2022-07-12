@@ -101,13 +101,10 @@ def fba_evaluations(model, fva_results, fba_result, change_media_bounds: dict = 
 
 
 def helper_fba_condition_normalmatched(condition, media_file, medium, models_use, models_dir,
-                                       fba_results=None, fva_results=None):
-    individuals = listdir(models_dir)
+                                       individuals, fba_results=None, fva_results=None):
     predicted_fluxes = None
     models_names = []
     for indiv in individuals:
-        if search('[.]', indiv):
-            next
         print('\n', indiv)
         # Get files that starts with 02_
         indiv_samples = [file for file in listdir(join(models_dir, indiv)) if file.startswith('02_')]
@@ -117,13 +114,14 @@ def helper_fba_condition_normalmatched(condition, media_file, medium, models_use
             with open(join(models_dir, indiv, samp), 'rb') as dump_file:
                 temp_dump = load(dump_file)
                 for cell_type, model in temp_dump.items():
-                    if cell_type in models_use['NormalMatched'][indiv]['control'][samp_name]:
+                    model_name = '_'.join((indiv, samp_name, cell_type))
+                    if model_name in models_use:
                         print('--', cell_type)
                         # Get SMDB medium
                         media = read_csv(media_file, index_col='ID')
                         model.medium = media[medium].to_dict()
                         # Get objective
-                        fba_orignal_fluxes = fba_results.loc[:,'_'.join((indiv, samp_name, cell_type))]
+                        fba_orignal_fluxes = fba_results.loc[:, model_name]
                         if cell_type in ['Proliferative CD4 Tcells', 'Proliferative CD8 Tcells']:
                             model.objective = {model.reactions.MAR13082: 1}
                             fba_orig_value = fba_orignal_fluxes['MAR13082']
@@ -140,7 +138,7 @@ def helper_fba_condition_normalmatched(condition, media_file, medium, models_use
                                                  change_media_bounds=condition['change_media_bounds'],
                                                  change_internal_bounds=condition['change_internal_bounds'])
                         # Save predicted fluxes
-                        models_names.append('_'.join((indiv, samp_name, cell_type)))
+                        models_names.append(model_name)
                         if predicted_fluxes is None:
                             predicted_fluxes = concat([fluxes], axis=1)
                         else:

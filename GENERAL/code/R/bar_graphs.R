@@ -156,7 +156,7 @@ fao_fau_fas_bar_graph = function(fba_fluxes, sample){
 # - UTILS -
 # ---------
 
-source_nadh_fadh2_ct = function(fba_fluxes, cts){
+source_nadh_fadh2_ct = function(fba_fluxes, metadata){
   fadh2_FAOs = c()
   nadh_FAOs = c()
   fadh2_TCAs = c()
@@ -164,8 +164,8 @@ source_nadh_fadh2_ct = function(fba_fluxes, cts){
   nadh_glycolysiss = c()
   nadh_glutaminoyliss = c()
   samps_all = c()
-  for(ct in cts){
-    ct_samps = grep(ct, colnames(fba_fluxes), value=T)
+  for(ct in unique(metadata$cell_type)){
+    ct_samps = rownames(metadata)[metadata$cell_type==ct]
     for(samp in ct_samps){
       total_all_fadh2_flux = sum(fba_fluxes[all_fadh2, samp])
       total_all_fnah_flux = sum(fba_fluxes[all_fnah, samp])
