@@ -28,9 +28,22 @@ The T-cells models can be found, in the *SBML* format, in the following folder o
 
 `----------<indiv><sample><cell_type>.xml.gz`
 
+The [metadata file](https://github.com/saracardoso/Metabolic_Models/tree/master/0MODELS/CRC_atlas/metadata.csv) regarding these models is also present in the `0MODELS/CRC_atlas` folder.
+
 
 ## Structure of the project
 
+This project is structured in the following way:
+
++ `0Data`: the aggregated expression data. For each sample, a *genes x cell-type* expression matrix in *CSV* format;
+
++ `OMODELS`: the reconstructed models (`0MODELS/CRC_atlas`) and the [HumanGEM](https://github.com/SysBioChalmers/Human-GEM) model used, version 1.8.0 (`0MODELS/HumanGEM`);
+
++ `1_PROCESS_HumanGEM`: scripts developed to prepare the human generic model ([HumanGEM](https://github.com/SysBioChalmers/Human-GEM)) for reconstruction of the models;
+
++ `2_RECONSTRUCTONS_scRNAseq/CRC_atlas`: scripts developed to reconstruct and analyse the T-cell subtype models;
+
++ `GENERAL`: *python* and *R* functions developed for use in the reconstruction and analysis scripts in `2_RECONSTRUCTONS_scRNAseq/CRC_atlas`. Also, data necessary to run these functions/scripts is stored here.
 
 
 <!-- ## How to reference -->
