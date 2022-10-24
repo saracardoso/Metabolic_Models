@@ -6,6 +6,7 @@ if __name__ == '__main__':
     from pandas import read_csv, concat, DataFrame
     from gc import collect
     from re import search
+    from cobra.flux_analysis import pfba
 
     '''
     Directories and files
@@ -57,15 +58,19 @@ if __name__ == '__main__':
                             model.objective = {model.reactions.MAR13082: 1, model.reactions.MAR06916: 1}
                         # Run pFBA
                         # model.solver = 'glpk_exact'
-                        solFBA = model.optimize(objective_sense='maximize')
-                        # solpFBA = pfba(model)
-                        # Save predicted fluxes
-                        models_names.append(model_name)
-                        if predicted_fluxes is None:
-                            predicted_fluxes = concat([solFBA.fluxes], axis=1)
+                        #solFBA = model.optimize(objective_sense='maximize')
+                        try:
+                            solFBA = pfba(model)
+                        except:
+                            print('Infeasible')
                         else:
-                            predicted_fluxes = concat([predicted_fluxes, solFBA.fluxes], axis=1)
+                            # Save predicted fluxes
+                            models_names.append(model_name)
+                            if predicted_fluxes is None:
+                                predicted_fluxes = concat([solFBA.fluxes], axis=1)
+                            else:
+                                predicted_fluxes = concat([predicted_fluxes, solFBA.fluxes], axis=1)
                 del temp_dump
                 collect()
     predicted_fluxes.columns = models_names
-    predicted_fluxes.to_csv(join(CRCReconstructionNormalMatched_dir, 'FBA/Tumour_Blood.csv'))
+    predicted_fluxes.to_csv(join(CRCReconstructionNormalMatched_dir, 'FBA/Tumour_Blood_pFBA.csv'))

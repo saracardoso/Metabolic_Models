@@ -3,6 +3,10 @@ ct_colors = c('#b30000', '#999999', '#cc79a7', '#b3c9e6', '#4e84c4', '#c3d7a4', 
 names(ct_colors) = c('Cytotoxic CD8 Tcells', 'Follicular CD4 Tcells', 'IL17+ CD4 Tcells',
                      'Memory CD4 Tcells', 'Memory CD8 Tcells', 'Naive CD4 Tcells', 'Naive CD8 Tcells',
                      'Proliferative CD4 Tcells', 'Proliferative CD8 Tcells',  'Regulatory CD4 Tcells')
+state_colors = c('#52854c', '#b30000')
+names(state_colors) = c('Normal Matched', 'Tumour')
+cms_colors = c('#d4cfcf', '#cc79a7', '#b3c9e6', '#c3d7a4', '#52854c', '#fdb981')
+names(cms_colors) = c('CMS3', 'Mixed', 'CMS1', 'CMS2', 'Normal Matched', 'CMS4')
 
 
 
@@ -10,7 +14,9 @@ names(ct_colors) = c('Cytotoxic CD8 Tcells', 'Follicular CD4 Tcells', 'IL17+ CD4
 # --- Load Gene Essentiality Results ---
 # --------------------------------------
 
-gene_essentiality = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/origObj_growth.csv',
+#gene_essentiality = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/growth.csv',
+#                             row.names=1, header=TRUE, check.names=FALSE)
+gene_essentiality = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/growth_biomass.csv',
                              row.names=1, header=TRUE, check.names=FALSE)
 # Change to gene symbols:
 humangem_genemapping = unlist(jsonlite::read_json('./GENERAL/utility_data/genes_mapping.json',
@@ -19,27 +25,11 @@ rownames(gene_essentiality) = names(humangem_genemapping)[match(rownames(gene_es
                                                                 humangem_genemapping)]
 
 # Also, load original FBA, under normal conditions:
-fba_fluxes_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/1_control_analysis/FBA/normal_FBA.csv',
+fba_fluxes_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/FBA/Normal_Blood_biomass.csv',
                           row.names=1, header=TRUE, check.names = FALSE)[,colnames(gene_essentiality)]
 
 # Metadata:
-split_colnames = strsplit(colnames(fba_fluxes_raw), '_')
-samples = c()
-cell_types = c()
-individuals = c()
-for(row_split in split_colnames){
-  individuals = c(individuals, row_split[1])
-  samples = c(samples, row_split[2])
-  cell_types = c(cell_types, row_split[3])
-}
-metadata = data.frame(individual=individuals, sample=samples, cell_type=cell_types,
-                      row.names=colnames(fba_fluxes_raw))
-more_meta = read.csv('./0Data/scRNAseq/CRC_atlas/expression_data/metadata.csv', row.names=1)
-states = c()
-for(samp in metadata$sample){
-  states = c(states, more_meta[samp, 'Sample.Source'])
-}
-metadata$state = states
+metadata = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/metadata.csv', row.names=1)
 
 # House-keeping genes:
 hk_genes = read.csv('./GENERAL/utility_data/Housekeeping_GenesHuman.csv')
@@ -49,13 +39,6 @@ hk_genes = read.csv('./GENERAL/utility_data/Housekeeping_GenesHuman.csv')
 # ------------------------------------------------------
 # --- Get list of essential genes for each cell-type ---
 # ------------------------------------------------------
-
-# 0. No models need to be removed from analysis, as no proliferative models had original biomass zero
-# and no other models had biomass + atp production zero.
-prol_tcells = grep('Proliferative', colnames(fba_fluxes_raw), value=TRUE)
-other_tcells = grep('Proliferative', colnames(fba_fluxes_raw), value=TRUE, invert=TRUE)
-sum(fba_fluxes_raw['MAR13082', prol_tcells] <= 0)
-sum(colSums(fba_fluxes_raw[c('MAR13082', 'MAR06916'), prol_tcells]) <= 0)
 
 # 1. Genes that are essential for each model (objective turns completely zero):
 # 1.1. Create matrix where results will be stored:
@@ -72,8 +55,10 @@ for(gene in rownames(model_essentiality)){
 }
 # 1.3. Remove genes known to be housekeeping genes:
 model_essentiality_woHK = model_essentiality[!rownames(model_essentiality)%in%hk_genes$Gene.name, ]
+#write.csv(model_essentiality_woHK,
+#          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/model_essential.csv')
 write.csv(model_essentiality_woHK,
-          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/model_essential.csv')
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/model_essential_biomass.csv')
 # 1.4. Genes essential for each cell-type:
 cellType_essentiality_woHK = list()
 for(ct in unique(metadata[, 'cell_type'])){
@@ -81,76 +66,14 @@ for(ct in unique(metadata[, 'cell_type'])){
   models_names = rownames(metadata)[metadata$cell_type==ct]
   n_models = length(models_names)
   ct_essentiality = rowSums(model_essentiality_woHK[, models_names])
-  cellType_essentiality_woHK[[ct]] = rownames(model_essentiality_woHK)[ct_essentiality / n_models > .9]
+  cellType_essentiality_woHK[[ct]] = rownames(model_essentiality_woHK)[(ct_essentiality / n_models) > .5]
 }
+#jsonlite::write_json(cellType_essentiality_woHK,
+#                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/CT_essential.json')
 jsonlite::write_json(cellType_essentiality_woHK,
-                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/CT_essential.json')
-
-# 2. Genes that are not essential for each model (objective turns completely zero) but still decrease enough:
-# 2.1. Create matrix where results will be stored:
-model_decrease= matrix(rep(FALSE, dim(gene_essentiality)[1]*dim(gene_essentiality)[2]),
-                            nrow=dim(gene_essentiality)[1])
-rownames(model_decrease) = rownames(gene_essentiality)
-colnames(model_decrease) = colnames(gene_essentiality)
-# 2.2. Essential genes in a model will be TRUE, others will be FALSE:
-for(gene in rownames(model_decrease)){
-  message(gene)
-  outcome = gene_essentiality[gene, colnames(model_decrease)]
-  original = rep(0, length(colnames(model_decrease)))
-  names(original) = colnames(model_decrease)
-  original[prol_tcells] = fba_fluxes_raw['MAR13082', prol_tcells]
-  original[other_tcells] = colSums(fba_fluxes_raw[c('MAR13082', 'MAR06916'), other_tcells])
-  outcome2 = (outcome < as.numeric(original)/2 | is.na(outcome))
-  model_decrease[gene, ] = outcome2
-}
-# 2.3. Remove genes known to be housekeeping genes:
-model_decrease_woHK = model_decrease[!rownames(model_decrease)%in%hk_genes$Gene.name, ]
-write.csv(model_decrease_woHK,
-          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/model_decrease.csv')
-# 1.4. Genes essential for each cell-type (only test genes not in ct's essential):
-cellType_decrease_woHK = list()
-for(ct in unique(metadata[, 'cell_type'])){
-  message(ct)
-  models_names = rownames(metadata)[metadata$cell_type==ct]
-  n_models = length(models_names)
-  ct_essentiality = rowSums(model_decrease_woHK[, models_names])
-  cellType_decrease_woHK[[ct]] = rownames(model_decrease_woHK)[ct_essentiality / n_models > .9]
-  cellType_decrease_woHK[[ct]] = cellType_decrease_woHK[[ct]][!cellType_decrease_woHK[[ct]]%in%
-                                                                cellType_essentiality_woHK[[ct]]]
-}
-jsonlite::write_json(cellType_decrease_woHK,
-                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/CT_decrease.json')
+                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/CT_essential_biomass.json')
 
 
-# 3. Genes whose objective increases:
-# 3.1. Create matrix where results will be stored:
-model_increase = matrix(rep(FALSE, dim(gene_essentiality)[1]*dim(gene_essentiality)[2]),
-                        nrow=dim(gene_essentiality)[1])
-rownames(model_increase) = rownames(gene_essentiality)
-colnames(model_increase) = colnames(gene_essentiality)
-# 3.2. Increasing genes in models:
-for(gene in rownames(model_increase)){
-  message(gene)
-  outcome = gene_essentiality[gene, ]
-  original = rep(0, length(colnames(model_increase)))
-  names(original) = colnames(model_increase)
-  original[prol_tcells] = fba_fluxes_raw['MAR13082', prol_tcells]
-  original[other_tcells] = colSums(fba_fluxes_raw[c('MAR13082', 'MAR06916'), other_tcells])
-  outcome2 = (outcome > 0 & !is.na(outcome) & outcome > original)
-  model_increase[gene, ] = outcome2
-}
-write.csv(model_increase,
-          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/model_increase.csv')
-# 3.3. Increasing genes in cell-types:
-cellType_increase = list()
-for(ct in unique(metadata$cell_type)){
-  message(ct)
-  models_names = rownames(metadata)[metadata$cell_type==ct]
-  n_models = length(models_names)
-  ct_essentiality = rowSums(model_increase[, models_names])
-  cellType_increase[[ct]] = rownames(model_increase)[ct_essentiality / n_models > 0.9]
-}
-# No increases.
 
 
 
@@ -198,6 +121,9 @@ write.csv(genes_pathways, './GENERAL/utility_data/genes_subsystems_mapping.csv',
 # --- Percentage of genes from a pathway that are essential ---
 # -------------------------------------------------------------
 
+# 0.
+genes_pathways = read.csv('./GENERAL/utility_data/genes_subsystems_mapping.csv')
+
 # 1. Get only reactions that are affected when the gene is deleted:
 single_gene_deletions = jsonlite::read_json('./GENERAL/utility_data/single_gene_deletion.json',
                                             simplifyVector = TRUE)
@@ -212,6 +138,7 @@ res_mat = matrix(rep(0, length(unique(genes_pathways_affected$pathways)) * dim(m
                  ncol=dim(model_essentiality_woHK)[2])
 colnames(res_mat) = colnames(model_essentiality_woHK)
 rownames(res_mat) = unique(genes_pathways_affected$pathways)
+res_mat_n = res_mat
 for(path in unique(genes_pathways_affected$pathways)){
   message(path)
   for(model in colnames(model_essentiality_woHK)){
@@ -219,31 +146,103 @@ for(path in unique(genes_pathways_affected$pathways)){
                   genes_pathways_affected$gene_symbol[genes_pathways_affected$pathways==path])
     perc = n_gns / n_genes_pathway[path] * 100
     res_mat[path, model] = perc
+    res_mat_n[path, model] = n_gns
   }
 }
 # Save file:
+#write.csv(res_mat,
+#          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/percentage_essential_pathways_models.csv')
 write.csv(res_mat,
-          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/percentage_essential_pathways_models.csv')
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/percentage_essential_pathways_models_biomass.csv')
+write.csv(res_mat_n,
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/ngenes_essential_pathways_models_biomass.csv')
 
 # 3. Heatmap of most affected pathways:
-stt = metadata$state
-stt[stt!='Normal Matched'] = 'Tumour'
-state_colors2 = c('#52854c', '#b30000')
-names(state_colors2) = c('Normal Matched', 'Tumour')
-ht3 = ComplexHeatmap::Heatmap(t(res_mat),
+ht3 = ComplexHeatmap::Heatmap(res_mat[, rownames(metadata)],
                               col = circlize::colorRamp2(c(0, 50, 100),
                                                          c('blue', 'white', 'red')),
                               name='% Essential Genes',
-                              row_split = metadata$cell_type,
-                              row_title = NULL,
-                              show_row_names = FALSE,
-                              column_names_gp = grid::gpar(fontsize=7.5),
-                              column_names_rot = 65,
+                              column_split = metadata$cell_type, column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=7.5),
+                              row_names_max_width = ComplexHeatmap::max_text_width(rownames(res_mat), 
+                                                                                   gp = grid::gpar(fontsize = 12)),
                               heatmap_legend_param = list(direction='horizontal'),
-                              left_annotation = ComplexHeatmap::rowAnnotation(cell_type=metadata$cell_type, state=stt, col=list(cell_type=ct_colors, state=state_colors2), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
-
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
 ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
                      annotation_legend_side='bottom')
+
+medians = matrixStats::rowMedians(as.matrix(res_mat))
+names(medians) = rownames(res_mat)
+top_20 = sort(medians, decreasing=T)[1:20]
+ht3 = ComplexHeatmap::Heatmap(res_mat[names(top_20), rownames(metadata)],
+                              col = circlize::colorRamp2(c(0, 50, 100),
+                                                         c('blue', 'white', 'red')),
+                              name='% Essential Genes',
+                              column_split = metadata$cell_type, column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=7.5),
+                              row_names_max_width = ComplexHeatmap::max_text_width(rownames(res_mat), 
+                                                                                   gp = grid::gpar(fontsize = 12)),
+                              heatmap_legend_param = list(direction='horizontal'),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+
+# Nº essential genes per pathway
+ht3 = ComplexHeatmap::Heatmap(res_mat_n[, rownames(metadata)],
+                              #col = circlize::colorRamp2(c(0, 50, 100),
+                              #                           c('blue', 'white', 'red')),
+                              name='N Essential Genes',
+                              column_split = metadata$cell_type, column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=7.5),
+                              row_names_max_width = ComplexHeatmap::max_text_width(rownames(res_mat), 
+                                                                                   gp = grid::gpar(fontsize = 12)),
+                              heatmap_legend_param = list(direction='horizontal'),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+
+medians = matrixStats::rowMedians(as.matrix(res_mat_n))
+names(medians) = rownames(res_mat_n)
+top_20_n = sort(medians, decreasing=T)[1:21]
+ht3 = ComplexHeatmap::Heatmap(res_mat_n[names(top_20_n), rownames(metadata)],
+                              #col = circlize::colorRamp2(c(0, 50, 100),
+                              #                           c('blue', 'white', 'red')),
+                              name='N Essential Genes',
+                              column_split = metadata$cell_type, column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=7.5),
+                              row_names_max_width = ComplexHeatmap::max_text_width(rownames(res_mat), 
+                                                                                   gp = grid::gpar(fontsize = 12)),
+                              heatmap_legend_param = list(direction='horizontal'),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+ht3 = ComplexHeatmap::Heatmap(res_mat_n[names(top_20_n[2:21]), rownames(metadata)],
+                              #col = circlize::colorRamp2(c(0, 50, 100),
+                              #                           c('blue', 'white', 'red')),
+                              name='N Essential Genes',
+                              column_split = metadata$cell_type, column_title = NULL,
+                              show_column_names = FALSE,
+                              row_names_gp = grid::gpar(fontsize=7.5),
+                              row_names_max_width = ComplexHeatmap::max_text_width(rownames(res_mat), 
+                                                                                   gp = grid::gpar(fontsize = 12)),
+                              heatmap_legend_param = list(direction='horizontal'),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
+                     annotation_legend_side='bottom')
+
+# Essential genes that are transport reactions:
+transport_genes = unique(genes_pathways$gene_symbol[genes_pathways$pathways=='Transport reactions'])
+essential_genes_transports = cellType_essentiality_woHK
+for(ct in names(essential_genes_transports)){
+  essential_genes_transports[[ct]] = essential_genes_transports[[ct]][essential_genes_transports[[ct]]%in%transport_genes]
+}
+sort(unique(unlist(essential_genes_transports)))
+
+
 
 
 
@@ -267,15 +266,13 @@ for(path in unique(genes_pathways_affected$pathways)){
   }
 }
 # Save file:
+#write.csv(res_mat2,
+#          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/representation_essential_pathways_models.csv')
 write.csv(res_mat2,
-          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/representation_essential_pathways_models.csv')
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/representation_essential_pathways_models_biomass.csv')
 
 # 2. Heatmap:
-stt = metadata$state
-stt[stt!='Normal Matched'] = 'Tumour'
-state_colors2 = c('#52854c', '#b30000')
-names(state_colors2) = c('Normal Matched', 'Tumour')
-ht3 = ComplexHeatmap::Heatmap(res_mat2,
+ht3 = ComplexHeatmap::Heatmap(res_mat2[, rownames(metadata)],
                               col = circlize::colorRamp2(c(0, max(res_mat2)/2,
                                                            max(res_mat2)),
                                                          c('blue', 'white', 'red')),
@@ -283,66 +280,43 @@ ht3 = ComplexHeatmap::Heatmap(res_mat2,
                               column_split = metadata$cell_type,
                               column_title = NULL,
                               show_column_names = FALSE,
-                              row_names_gp = grid::gpar(fontsize=5.5),
-                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=stt, col=list(cell_type=ct_colors, state=state_colors2), annotation_legend_param = list(cell_type=list(title='Cell Type'), state=list(title='State')), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+                              row_names_gp = grid::gpar(fontsize=7.5),
+                              heatmap_legend_param = list(direction='horizontal'),
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
 ComplexHeatmap::draw(ht3, merge_legend = TRUE, heatmap_legend_side='bottom',
                      annotation_legend_side='bottom')
 
-# Heatmap of potencial essential genes from eicosanoid metabolism
-genes = genes_pathways_affected$gene_symbol[genes_pathways_affected$pathways=='Eicosanoid metabolism']
-stt = metadata$state
-stt[stt!='Normal Matched'] = 'Tumour'
-state_colors2 = c('#52854c', '#b30000')
-names(state_colors2) = c('Normal Matched', 'Tumour')
+
+# Heatmap of potencial essential genes from certain pathways:
+genes = c('FECH', 'PPOX', 'COQ3', 'COQ6', 'COQ7', 'RFK', 'BLVRB',
+          'ALOX12B', 'CYP2F1', 'CYP4F8', 'CYP4F12', 'LTC4S', 'HPGD',
+          "A4GALT", "GLA", "B3GALNT1", "B3GALT5", "GBGT1", "NAGA", "ST8SIA1", "ACAT2", "AACS", "HMGCS1", "ECHDC2",
+          "ALB", "SERPINA3", "SERPINA1", "APOB", "APOC1", "APOC2", "APOC3", "FGA", "PLG", "F2", "TFRC", "APOE", "BMP1",
+          "CARNS1", "HNMT", "HAL", "FTCD", "AMDHD1", "UROC1",
+          'SLC12A3', 'SLC6A20', 'SLC6A4', 'SLC29A4', 'SLC7A10', 'SLC7A5', 'SLC38A5', 'SLC1A4', 'SLC7A11',
+          'SLC29A2', 'SLC28A3', 'SLC28A1', 'SLC5A6')
+genes_paths = c(rep('Heme synthesis', 2), rep('Ubiquinone synthesis', 3), rep('Riboflavin metabolism', 2),
+                rep('Eicosanoid metabolism', 6),
+                rep('Glycosphingolipid biosynthesis-globo series', 7), rep('Butanoate metabolism', 4),
+                rep('Protein assembly', 13),
+                rep('Histidine metabolism', 6),
+                rep('Chloride uptake', 2), rep('Serotonin uptake', 2), rep('Uptake of amino acids', 5),
+                rep('Nucleotides/nucleosides uptake', 3), 'Vitamins B5 and B7, and lipoic acid uptake')
 genes_map = model_essentiality_woHK[genes, rownames(metadata)]
 genes_map[genes_map==TRUE] = 1
 hte = ComplexHeatmap::Heatmap(genes_map,
                               show_heatmap_legend = FALSE,
                               col = circlize::colorRamp2(c(0, 1),
-                                                         c('lightgrey', 'red')),
+                                                         c('blue', 'red')),
                               name='Essential',
-                              column_split = metadata$cell_type,
-                              column_title = NULL,
+                              column_split = metadata$cell_type, row_split = genes_paths,
+                              column_title = NULL, row_title = NULL,
                               show_column_names = FALSE,
                               cluster_rows = TRUE,
                               #row_names_gp = grid::gpar(fontsize=5.5),
-                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type,
-                                                                                 state=stt, col=list(cell_type=ct_colors, state=state_colors2),
-                                                                                 annotation_legend_param = list(cell_type=list(title='Cell Type'),
-                                                                                                                state=list(title='State')),
-                                                                                 show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
-ComplexHeatmap::draw(hte, merge_legend = TRUE, #heatmap_legend_side='none',
+                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type, state=metadata$state, cms=metadata$CMS, col=list(cell_type=ct_colors, state=state_colors, cms=cms_colors), annotation_legend_param = list(cell_type=list(title='Cell Type', ncol=5), state=list(title='State', nrow=1), cms=list(title='CMS', nrow=1)), show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
+ComplexHeatmap::draw(hte, merge_legend = TRUE, heatmap_legend_side='bottom',
                      annotation_legend_side='bottom')
-
-# Heatmap of potencial essential genes from eicosanoid metabolism, leukotriene metabolism, prostaglandin biosynthesis
-genes = unique(genes_pathways_affected$gene_symbol[genes_pathways_affected$pathways%in%
-                                                     c('Eicosanoid metabolism',
-                                                       'Leukotriene metabolism',
-                                                       'Prostaglandin biosynthesis')])
-stt = metadata$state
-stt[stt!='Normal Matched'] = 'Tumour'
-state_colors2 = c('#52854c', '#b30000')
-names(state_colors2) = c('Normal Matched', 'Tumour')
-genes_map = model_essentiality_woHK[genes[-3], rownames(metadata)]
-genes_map[genes_map==TRUE] = 1
-hte = ComplexHeatmap::Heatmap(genes_map,
-                              show_heatmap_legend = FALSE,
-                              col = circlize::colorRamp2(c(0, 1),
-                                                         c('lightgrey', 'red')),
-                              name='Essential',
-                              column_split = metadata$cell_type,
-                              column_title = NULL,
-                              show_column_names = FALSE,
-                              cluster_rows = TRUE,
-                              #row_names_gp = grid::gpar(fontsize=5.5),
-                              top_annotation = ComplexHeatmap::HeatmapAnnotation(cell_type=metadata$cell_type,
-                                                                                 state=stt, col=list(cell_type=ct_colors, state=state_colors2),
-                                                                                 annotation_legend_param = list(cell_type=list(title='Cell Type'),
-                                                                                                                state=list(title='State')),
-                                                                                 show_annotation_name=FALSE, simple_anno_size = grid::unit(2,'mm')))
-ComplexHeatmap::draw(hte, merge_legend = TRUE, #heatmap_legend_side='none',
-                     annotation_legend_side='bottom')
-
 
 
 
@@ -359,8 +333,10 @@ for(ct in all_cts){
   ct_unique_essential_genes = ct_essential_genes[!ct_essential_genes%in%other_ct_essential_genes]
   unique_essential[[ct]] = ct_unique_essential_genes
 }
+#jsonlite::write_json(unique_essential,
+#                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/unique_essential_ct.json')
 jsonlite::write_json(unique_essential,
-                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/unique_essential_ct.json')
+                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/unique_essential_ct_biomass.json')
 
 # 2. Get genes uniquely decrease in each cell-type:
 all_cts = names(cellType_decrease_woHK)
@@ -371,8 +347,7 @@ for(ct in all_cts){
   ct_unique_essential_genes = ct_essential_genes[!ct_essential_genes%in%other_ct_essential_genes]
   unique_decrease[[ct]] = ct_unique_essential_genes
 }
-jsonlite::write_json(unique_decrease,
-                     './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/unique_decrease_ct.json')
+# No uniques
 
 
 
@@ -402,7 +377,8 @@ cd4_cells = c('Proliferative CD4 Tcells', 'Memory CD4 Tcells', 'Naive CD4 Tcells
 # House-keeping genes
 hk_genes = read.csv('./GENERAL/utility_data/Housekeeping_GenesHuman.csv')
 # Essential genes by cell-type
-cellType_essentiality_woHK = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/CT_essential.json', simplifyVector=TRUE)
+#cellType_essentiality_woHK = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/CT_essential.json', simplifyVector=TRUE)
+cellType_essentiality_woHK = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Gene_essentiality/CT_essential_biomass.json', simplifyVector=TRUE)
 # Essential genes - CD8
 cd8_insilico = unique(unlist(cellType_essentiality_woHK[cd8_cells]))
 # Essential genes - CD4
@@ -487,33 +463,7 @@ display_venn(list(cd4litall=all_genes_cd4lit, cd8litall=all_genes_cd8lit,
 
 
 # ---
-# - Genes tested vs silico CD4 vs silico CD8
-# ---
-
-display_venn(list(cd4silico=cd4_insilico, cd8silico=cd8_insilico,
-                  genes_tested=genes_tested),
-             category.names = c("CD4 Predictions" , "CD8 Predictions", "Genes Tested"),
-             # Circles
-             fill = c("#E69F00", "#990033", "grey"),
-             # Numbers
-             cex = 1.5,
-             fontface = "italic",
-             # Set names
-             cat.cex = 1,
-             cat.fontface = "bold",
-             cat.default.pos = "outer",
-             cat.dist = c(-0.04, -0.04, -0.04),
-             cat.pos=c(-10, 0, 10),
-             # Title
-             main='',
-             main.pos = c(.5, .85),
-             main.cex = 1.5,
-             main.fontface = 'bold')
-
-
-
-# ---
-# - Genes tested vs silico CD4 vs silico CD8
+# - Genes tested vs literature CD4 vs literature CD8
 # ---
 
 display_venn(list(cd4lit=essential_genes_cd4_ting_metabolic_woHK,
@@ -540,17 +490,14 @@ display_venn(list(cd4lit=essential_genes_cd4_ting_metabolic_woHK,
 
 
 # ---
-# - silico CD4 vs literature CD4 (- not tested)
+# - Genes tested vs silico CD4 vs silico CD8
 # ---
 
-cd4lit_tested = essential_genes_cd4_ting_metabolic_woHK[essential_genes_cd4_ting_metabolic_woHK%in%
-                                                          genes_tested_woHK]
-display_venn(list(cd4lit=cd4lit_tested,
-                  cd4silico=cd4_insilico),
-             category.names = c("CD4 (Ting et al, 2018)" , "CD4 Predictions"),
-             ext.percent=.001,
+display_venn(list(cd4silico=cd4_insilico, cd8silico=cd8_insilico,
+                  genes_tested=genes_tested),
+             category.names = c("CD4 Predictions" , "CD8 Predictions", "Genes Tested"),
              # Circles
-             fill = c("#56B4E9", "#E69F00"),
+             fill = c("#E69F00", "#990033", "grey"),
              # Numbers
              cex = 1.5,
              fontface = "italic",
@@ -558,18 +505,22 @@ display_venn(list(cd4lit=cd4lit_tested,
              cat.cex = 1,
              cat.fontface = "bold",
              cat.default.pos = "outer",
-             cat.dist = c(0.02, -0.37),
-             cat.pos=c(40, 0),
+             cat.dist = c(-0.04, -0.04, -0.04),
+             cat.pos=c(-10, 0, 10),
              # Title
              main='',
              main.pos = c(.5, .85),
              main.cex = 1.5,
              main.fontface = 'bold')
 
-# Were the genes predicted as essential but not essential in study studied (or has info for it)?
-pred_cd4_notinLit = cd4_insilico[!cd4_insilico%in%cd4lit_tested]
-sum(pred_cd4_notinLit%in%all_genes_cd4lit) # 174
 
+
+# ---
+# - silico CD4 vs literature CD4 (common genes tested)
+# ---
+
+cd4lit_tested = essential_genes_cd4_ting_metabolic_woHK[essential_genes_cd4_ting_metabolic_woHK%in%
+                                                          genes_tested_woHK]
 cd4pred_inlit = cd4_insilico[cd4_insilico%in%all_genes_cd4lit]
 display_venn(list(cd4lit=cd4lit_tested,
                   cd4silico=cd4pred_inlit),
@@ -584,7 +535,7 @@ display_venn(list(cd4lit=cd4lit_tested,
              cat.cex = 1,
              cat.fontface = "bold",
              cat.default.pos = "outer",
-             cat.dist = c(-.125, -.415),
+             cat.dist = c(-.21, -.415),
              cat.pos=c(-10, 0),
              # Title
              main='',
@@ -595,40 +546,15 @@ display_venn(list(cd4lit=cd4lit_tested,
 
 
 # ---
-# - silico CD8 vs literature CD8 (- not tested)
+# - silico CD8 vs literature CD8 (common genes tested)
 # ---
 
 cd8lit_tested = essential_genes_cd8_shifrut_metabolic_woHK[essential_genes_cd8_shifrut_metabolic_woHK%in%
                                                              genes_tested_woHK]
-display_venn(list(cd8lit=cd8lit_tested,
-                  cd8silico=cd8_insilico),
-             category.names = c("CD8 (Shifrut et al, 2018)" , "CD8 Predictions"),
-             ext.percent=.001,
-             # Circles
-             fill = c("#009E73", "#990033"),
-             # Numbers
-             cex = 1.5,
-             fontface = "italic",
-             # Set names
-             cat.cex = 1,
-             cat.fontface = "bold",
-             cat.default.pos = "outer",
-             cat.dist = c(0.01, -0.37),
-             cat.pos=c(0, 0),
-             # Title
-             main='',
-             main.pos = c(.5, .85),
-             main.cex = 1.5,
-             main.fontface = 'bold')
-
-# Were the genes predicted as essential but not essential in study studied (or has info for it)?
-pred_cd8_notinLit = cd8_insilico[!cd8_insilico%in%cd8lit_tested]
-sum(pred_cd8_notinLit%in%all_genes_cd8lit) # 126
-
 cd8pred_inlit = cd8_insilico[cd8_insilico%in%all_genes_cd8lit]
 display_venn(list(cd8lit=cd8lit_tested,
                   cd8silico=cd8pred_inlit),
-             category.names = c("Essential" , "CD8 Predictions"),
+             category.names = c("CD8 (Shifrut et al, 2018)" , "CD8 Predictions"),
              ext.percent=.1,
              # Circles
              fill = c("#009E73", "#990033"),
@@ -639,7 +565,7 @@ display_venn(list(cd8lit=cd8lit_tested,
              cat.cex = 1,
              cat.fontface = "bold",
              cat.default.pos = "outer",
-             cat.dist = c(-.37, -.42),
+             cat.dist = c(.012, .012),
              cat.pos=c(0, 0),
              # Title
              main='',
@@ -650,65 +576,87 @@ display_venn(list(cd8lit=cd8lit_tested,
 
 
 
-
-
-# -------------------------------------------------------------
-# --- Uniquely essential genes - representation in pathways ---
-# -------------------------------------------------------------
-
-
-
 # ---
-# - Read results obtained above
+# - literature CD4 and CD8 genes (from common genes tested) not predicted by us: do they still decrease?
 # ---
 
-# Essential genes by cell-type
-cellType_essentiality_woHK = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/CT_essential.json', simplifyVector=TRUE)
-# Gene-pathways mapping
-genes_pathways = read.csv('./GENERAL/utility_data/genes_subsystems_mapping.csv')
-# Genes uniquely essential for each cell-type
-unique_essential = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/3_gene_essentiality/unique_essential_ct.json', simplifyVector = T)
+cd4_notpredicted = cd4lit_tested[!cd4lit_tested%in%cd4pred_inlit]
+cd8_notpredicted = cd8lit_tested[!cd8lit_tested%in%cd8pred_inlit]
 
+cd8_cells = c('Cytotoxic CD8 Tcells', 'Proliferative CD8 Tcells',
+              'Memory CD8 Tcells', 'Naive CD8 Tcells')
+cd4_cells = c('Proliferative CD4 Tcells', 'Memory CD4 Tcells', 'Naive CD4 Tcells',
+              'Regulatory CD4 Tcells', 'Follicular CD4 Tcells', 'IL17+ CD4 Tcells')
 
-# ---
-# - Get number of genes and reactions in pathways affected by unique essential genes for each ct
-# ---
-
-cts = c()
-paths = c()
-ngenes = c()
-nrxns = c()
-for(ct in names(unique_essential)){
-  x = genes_pathways[genes_pathways$gene_symbol%in%cellType_essentiality_woHK[[ct]],]
-  x$unique = NA
-  x[x$gene_symbol%in%unique_essential[[ct]],'unique'] = 'yes'
-  x = x[!is.na(x$unique), ]
-  
-  pathways = unique(x$pathways)
-  for(path in pathways){
-    y = x[x$pathways==path, ]
-    n_genes = length(unique(y$gene_symbol))
-    n_rxns = length(unique(y$reaction))
+# CD4:
+cd4_zeros = c()
+cd4_decreases = c()
+cd4_cts = c()
+for(gene in cd4_notpredicted){
+  for(ct in cd4_cells){
+    models_names = grep(ct, colnames(fba_fluxes_raw), value=T)
+    cd4_cts = c(cd4_cts, ct)
     
-    cts = c(cts, ct)
-    paths = c(paths, path)
-    ngenes = c(ngenes, n_genes)
-    nrxns = c(nrxns, n_rxns)
+    z = as.numeric(gene_essentiality[gene, models_names]) == 0
+    z[is.na(z)] = TRUE
+    cd4_zeros = c(cd4_zeros, sum(z) / 196 * 100)
+    
+    d = as.numeric(gene_essentiality[gene, models_names]) < as.numeric(fba_fluxes_raw['MAR13082', models_names])
+    d[is.na(d)] = TRUE
+    cd4_decreases = c(cd4_decreases, sum(d) / 196 * 100)
   }
+  
 }
-df_plot = data.frame(cell_type=cts, pathway=paths, n_gene=ngenes, n_reaction=nrxns, ratio=nrxns/ngenes)
+df_plot = data.frame(gene=cd4_notpredicted, cell_type=cd4_cts, cd4_zeros, cd4_decreases)
+
+# CD8:
+cd8_zeros = c()
+cd8_decreases = c()
+cd8_cts = c()
+for(gene in cd8_notpredicted){
+  for(ct in cd8_cells){
+    models_names = grep(ct, colnames(fba_fluxes_raw), value=T)
+    cd8_cts = c(cd8_cts, ct)
+    
+    z = as.numeric(gene_essentiality[gene, models_names]) == 0
+    z[is.na(z)] = TRUE
+    cd8_zeros = c(cd8_zeros, sum(z) / 196 * 100)
+    
+    d = as.numeric(gene_essentiality[gene, models_names]) < as.numeric(fba_fluxes_raw['MAR13082', models_names])
+    d[is.na(d)] = TRUE
+    cd8_decreases = c(cd8_decreases, sum(d) / 196 * 100)
+  }
+  
+}
+df_plot_cd8 = data.frame(gene=cd8_notpredicted, cell_type=cd8_cts, cd8_zeros, cd8_decreases)
 
 
-# ---
-# - Plot the information
-# ---
 
-tab_paths = table(df_plot$pathway)
 
-ggplot2::ggplot(df_plot[df_plot$pathway%in%names(tab_paths[tab_paths<3]),],
-                ggplot2::aes(pathway, cell_type)) +
-  ggplot2::geom_point(ggplot2::aes(size=n_gene, color=ratio)) +
-  ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1)) +
-  ggplot2::scale_color_continuous(type='viridis')
+
+# ----------------------------------------------
+# --- Essential genes of transport reactions ---
+# ----------------------------------------------
+
+# Potential essential:
+transport = unique(genes_pathways_affected$gene_symbol[genes_pathways_affected$pathways=='Transport reactions'])
+
+# Essential transports: 43
+transport_essential = list()
+for(ct in names(cellType_essentiality_woHK)){
+  genes = cellType_essentiality_woHK[[ct]]
+  transport_essential[[ct]] = genes[genes%in%transport]
+}
+x = unique(unlist(transport_essential))
+
+g = 'SLC5A8'
+g%in%essential_genes_cd4_ting_metabolic_woHK
+g%in%all_genes_cd4lit
+
+g%in%essential_genes_cd8_shifrut_metabolic_woHK
+g%in%all_genes_cd8lit
+
+unlist(transport_essential)[unlist(transport_essential)=='SLC7A11']
+
 
 

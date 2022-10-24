@@ -58,19 +58,23 @@ if __name__ == '__main__':
                         media = read_csv(tcells_media_file, index_col='ID')
                         model.medium = media['Blood_SMDB'].to_dict()
                         # Get objective
-                        fba_orignal_fluxes = predicted_fluxes.loc[:, model_name]
-                        if cell_type in ['Proliferative CD4 Tcells', 'Proliferative CD8 Tcells']:
-                            model.objective = {model.reactions.MAR13082: 1}
-                            fba_orig_value = fba_orignal_fluxes['MAR13082']
-                        else:
-                            model.objective = {model.reactions.MAR13082: 1, model.reactions.MAR06916: 1}
-                            fba_orig_value = fba_orignal_fluxes['MAR13082'] + fba_orignal_fluxes['MAR06916']
+                        # ---
+                        #fba_orignal_fluxes = predicted_fluxes.loc[:, model_name]
+                        #if cell_type in ['Proliferative CD4 Tcells', 'Proliferative CD8 Tcells']:
+                        #    model.objective = {model.reactions.MAR13082: 1}
+                        #    fba_orig_value = fba_orignal_fluxes['MAR13082']
+                        #else:
+                        #    model.objective = {model.reactions.MAR13082: 1, model.reactions.MAR06916: 1}
+                        #    fba_orig_value = fba_orignal_fluxes['MAR13082'] + fba_orignal_fluxes['MAR06916']
+                        model.objective = {model.reactions.MAR13082: 1}
+                        #fba_orig_value = fba_orignal_fluxes['MAR13082']
+                        # ---
                         # Get original FBA without knockouts:
-                        fba_result = Solution(fba_orig_value, 'optimal', fluxes=fba_orignal_fluxes)
+                        #fba_result = Solution(fba_orig_value, 'optimal', fluxes=fba_orignal_fluxes)
                         # Run gene essentiality
                         genes_toTest = [model.genes.get_by_id(gene) for gene in list(genes_rxns_toTest.keys())]
                         res_gess = single_gene_deletion(model, gene_list=genes_toTest,
-                                                        method='linear room', solution=fba_result)
+                                                        method='fba')#, solution=fba_result)
                         # Change frozenset indexes to strings:
                         new_indexes = []
                         for idx in res_gess.index:
@@ -94,10 +98,14 @@ if __name__ == '__main__':
     gene_essentiality_status.columns = models_names
     gene_essentiality_status = gene_essentiality_status.set_axis(new_indexes, axis=0)
 
+    #gene_essentiality_growth.to_csv(''.join((CRCReconstructionNormalMatched_dir,
+    #                                         '/Gene_essentiality/growth.csv')))
+    #gene_essentiality_status.to_csv(''.join((CRCReconstructionNormalMatched_dir,
+    #                                         '/Gene_essentiality/status.csv')))
     gene_essentiality_growth.to_csv(''.join((CRCReconstructionNormalMatched_dir,
-                                             '/Gene_essentiality/growth.csv')))
+                                             '/Gene_essentiality/growth_biomass.csv')))
     gene_essentiality_status.to_csv(''.join((CRCReconstructionNormalMatched_dir,
-                                             '/Gene_essentiality/status.csv')))
+                                             '/Gene_essentiality/status_biomass.csv')))
 
     '''
     Check glucose case:

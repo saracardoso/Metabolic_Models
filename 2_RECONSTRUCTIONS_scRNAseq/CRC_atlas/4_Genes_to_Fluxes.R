@@ -132,6 +132,18 @@ fba_normalBlood_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMat
 # Sigmoid Transform fluxes:
 fba_normalBlood = 2 * ((1 / (1 + exp(-fba_normalBlood_raw))) - 0.5)
 
+# Read pFBA data:
+pfba_normalBlood_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/FBA/Normal_Blood_pFBA.csv',
+                               row.names=1, check.names = FALSE)
+# Sigmoid Transform fluxes:
+pfba_normalBlood = 2 * ((1 / (1 + exp(-pfba_normalBlood_raw))) - 0.5)
+
+# Read pFBA biomass data:
+pfba_normalBlood_biomass_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/FBA/Normal_Blood_pFBA_biomass.csv',
+                                row.names=1, check.names = FALSE)
+# Sigmoid Transform fluxes:
+pfba_normalBlood_biomass = 2 * ((1 / (1 + exp(-pfba_normalBlood_biomass_raw))) - 0.5)
+
 # Reaction presence:
 rxn_presence = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/reaction_presence.csv',
                         row.names=1, header=TRUE, check.names=FALSE)
@@ -155,6 +167,16 @@ rxns_keep = unique(genes_pathways$reaction[genes_pathways$gene_symbol%in%rowname
 fba_normalBlood_gprs = fba_normalBlood[rxns_keep, ]
 write.csv(fba_normalBlood_gprs,
           './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/fba_normalBlood_gprs.csv')
+
+# 3. Get fluxes dataset only with these reactions
+pfba_normalBlood_gprs = pfba_normalBlood[rxns_keep, ]
+write.csv(pfba_normalBlood_gprs,
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/pfba_normalBlood_gprs.csv')
+
+# 4. Get fluxes dataset only with these reactions
+pfba_normalBlood_biomass_gprs = pfba_normalBlood_biomass[rxns_keep, ]
+write.csv(pfba_normalBlood_biomass_gprs,
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/pfba_normalBlood_biomass_gprs.csv')
 
 # 5. Get reaction presence only with the reactions
 rxn_presence_gprs = rxn_presence[rxns_keep, ]
@@ -188,6 +210,23 @@ fba_normalBlood = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched
 fba_normalBlood = 2 * ((1 / (1 + exp(-fba_normalBlood))) - 0.5)
 fba_normalBlood_gprs = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/fba_normalBlood_gprs.csv',
                                 row.names = 1, check.names = FALSE)
+
+pfba_normalBlood_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/FBA/Normal_Blood_pFBA.csv',
+                                row.names=1, check.names = FALSE)
+pfba_normalBlood = 2 * ((1 / (1 + exp(-pfba_normalBlood_raw))) - 0.5)
+pfba_normalBlood_gprs = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/pfba_normalBlood_gprs.csv',
+                                 row.names=1, check.names=FALSE)
+
+pfba_normalBlood_biomass_raw = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/FBA/Normal_Blood_pFBA_biomass.csv',
+                                        row.names=1, check.names = FALSE)
+pfba_normalBlood_biomass = 2 * ((1 / (1 + exp(-pfba_normalBlood_biomass_raw))) - 0.5)
+pfba_normalBlood_gprs = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/pfba_normalBlood_gprs.csv',
+                                 row.names=1, check.names = FALSE)
+
+# 4. Get fluxes dataset only with these reactions
+pfba_normalBlood_biomass_gprs = pfba_normalBlood_biomass[rxns_keep, ]
+write.csv(pfba_normalBlood_biomass_gprs,
+          './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/pfba_normalBlood_biomass_gprs.csv')
 
 fba_tumourBlood = read.csv('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/FBA/Tumour_Blood.csv',
                            row.names=1, check.names = FALSE)
@@ -230,6 +269,76 @@ Seurat::DimPlot(CPMs_seurat, group.by='cell_type', label=FALSE, pt.size=1.8) +
   ggplot2::guides(col = ggplot2::guide_legend(nrow = 3, override.aes = list(size=6)))
 
 
+# 3. UMAP of pFBA dataset
+pFBA_meta = metadata[colnames(pfba_normalBlood), ]
+pFBA_seurat = SeuratObject::CreateSeuratObject(pfba_normalBlood, meta.data = pFBA_meta)
+pFBA_seurat = Seurat::ScaleData(pFBA_seurat)
+pFBA_seurat = Seurat::RunPCA(pFBA_seurat, assay='RNA', features=rownames(pFBA_seurat))
+pFBA_seurat = Seurat::RunUMAP(pFBA_seurat, dims = 1:30, verbose = FALSE)
+invisible(gc())
+Seurat::DimPlot(pFBA_seurat, group.by='cell_type', label=FALSE, pt.size=1.8) +
+  ggplot2::scale_colour_manual(values=ct_colors) +
+  ggplot2::ggtitle('pFBA') +
+  ggplot2::theme_light() +
+  ggplot2::theme(legend.position = 'bottom', legend.text=ggplot2::element_text(size=8)) +
+  ggplot2::guides(col = ggplot2::guide_legend(nrow = 3, override.aes = list(size=6)))
+Seurat::DimPlot(pFBA_seurat, group.by='CMS', label=FALSE, pt.size=1.8) +
+  ggplot2::ggtitle('pFBA') +
+  ggplot2::theme_light() +
+  ggplot2::theme(legend.position = 'bottom', legend.text=ggplot2::element_text(size=8)) +
+  ggplot2::guides(col = ggplot2::guide_legend(nrow = 3, override.aes = list(size=6)))
+Seurat::FeaturePlot(pFBA_seurat, 'MAR13082', label=FALSE, pt.size=1.8) +
+  ggplot2::ggtitle('pFBA - Biomass') +
+  ggplot2::theme_light()
+Seurat::FeaturePlot(pFBA_seurat, 'MAR06916', label=FALSE, pt.size=1.8) +
+  ggplot2::ggtitle('pFBA - ATP Production') +
+  ggplot2::theme_light()
+
+# 3.1. Find the 3 clusters and get reaction markers of each cluster:
+pct = pFBA_seurat[["pca"]]@stdev /sum(pFBA_seurat[["pca"]]@stdev) * 100
+cumu = cumsum(pct)
+co1 = which(cumu > 90 & pct < 5)[1]
+co2 = sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
+# 3.1.1 Number of PCs to use
+elbow = min(co1, co2) # 14
+# 3.1.2. Visual representation of the PCs to use
+plot_df = data.frame(pct=pct, cumu=cumu, rank=1:length(pct))
+ggplot2::ggplot(plot_df, ggplot2::aes(cumu, pct, label = rank, color = rank > elbow)) + 
+  ggplot2::geom_text() + 
+  ggplot2::geom_vline(xintercept = 90, color = "grey") + 
+  ggplot2::geom_hline(yintercept = min(pct[pct > 5]), color = "grey") +
+  ggplot2::theme_bw()
+# 3.1.3 Find clusters:
+pFBA_seurat = Seurat::FindNeighbors(pFBA_seurat, dims=1:elbow)
+pFBA_seurat = Seurat::FindClusters(pFBA_seurat, resolution=0.2)
+# 3.1.4. Visualize clusters:
+Seurat::DimPlot(pFBA_seurat, group.by='RNA_snn_res.0.2', label=FALSE, pt.size=1.8) +
+  ggplot2::ggtitle('pseudo-bulk (CPMs)') +
+  ggplot2::theme_light() +
+  ggplot2::theme(legend.position = 'bottom', legend.text=ggplot2::element_text(size=8)) +
+  ggplot2::guides(col = ggplot2::guide_legend(nrow = 3, override.aes = list(size=6)))
+# 3.1.5. Get reaction markers:
+Seurat::Idents(pFBA_seurat) = 'RNA_snn_res.0.2'
+pFBA_seurat_markers = Seurat::FindAllMarkers(pFBA_seurat, assay='RNA', slot='data', logfc.threshold=0, min.pct = 0, only.pos=TRUE)
+View(pFBA_seurat_markers)
+
+
+features = c('MAR00237')
+point_size = 2
+ncol=1
+feature_plots = list()
+for(feature in features){
+  feature_plots[[feature]] = Seurat::FeaturePlot(pFBA_seurat, features=feature, pt.size=point_size) +
+    ggplot2::scale_color_gradientn(colours=c("navy", "grey", "yellow"),
+                                   na.value=grDevices::rgb(0.75, 0.75, 0.75, alpha=0.2), limits=c(-.01,.01)) +
+    ggplot2::theme_minimal()
+}
+patchwork::wrap_plots(feature_plots, ncol=ncol)
+
+
+
+
+
 
 
 
@@ -240,6 +349,15 @@ Seurat::DimPlot(CPMs_seurat, group.by='cell_type', label=FALSE, pt.size=1.8) +
 m2 = metadata
 m2$cell_type = factor(m2$cell_type, levels = names(ct_colors))
 ggplot2::ggplot(m2, ggplot2::aes(x=state, y=n_reactions, colour=cell_type)) +
+  ggplot2::geom_boxplot(outlier.shape = NA) + ggplot2::facet_wrap(ggplot2::vars(cell_type)) +
+  ggplot2::geom_jitter(width = 0.15) +
+  ggplot2::scale_colour_manual(values=ct_colors) +
+  ggplot2::ylab('Number Reactions') + ggplot2::xlab('') +
+  ggplot2::theme_light() +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 55, hjust = 1)) #+
+  #ggplot2::theme(legend.position = 'none')
+
+ggplot2::ggplot(m2, ggplot2::aes(x=CMS, y=n_reactions, colour=cell_type)) +
   ggplot2::geom_boxplot(outlier.shape = NA) + ggplot2::facet_wrap(ggplot2::vars(cell_type)) +
   ggplot2::geom_jitter(width = 0.15) +
   ggplot2::scale_colour_manual(values=ct_colors) +
@@ -259,16 +377,19 @@ ggplot2::ggplot(m2, ggplot2::aes(x=state, y=n_reactions, colour=cell_type)) +
 
 # 0. Train and test samples:
 train_test_samples = list()
-train_test_samples$train = sample(colnames(CPMs), 139)
-train_test_samples$test = colnames(CPMs)[!colnames(CPMs)%in%train_test_samples$train]
+train_test_samples$train = sample(intersect(colnames(pfba_normalBlood_biomass), colnames(pfba_normalBlood)), 90)#colnames(CPMs), 139)
+#train_test_samples$test = colnames(CPMs)[!colnames(CPMs)%in%train_test_samples$train]
+train_test_samples$test = intersect(colnames(pfba_normalBlood_biomass), colnames(pfba_normalBlood))[!intersect(colnames(pfba_normalBlood_biomass), colnames(pfba_normalBlood))%in%train_test_samples$train]
 # Distribution of cell-types in train samples
 table(metadata[train_test_samples$train, 'cell_type']) / table(metadata[, 'cell_type']) * 100
 jsonlite::write_json(train_test_samples,
                      './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/train_test_samples.json')
 # Where data will be stored:
-ml_res = data.frame(MCC=rep(NA, 7), row.names=c('CPMs', 'GASs', 'RASs',
-                                                 'reaction_presence', 'reaction_presence_gprs',
-                                                 'fba_normalBlood', 'fba_normalBlood_gprs'))
+ml_res = data.frame(MCC=rep(NA, 11), row.names=c('CPMs', 'GASs', 'RASs',
+                                                'reaction_presence', 'reaction_presence_gprs',
+                                                'fba_normalBlood', 'fba_normalBlood_gprs', 
+                                                'pfba_normalBlood', 'pfba_normalBlood_gprs',
+                                                'pfba_biomass_normalBlood', 'pfba_biomass_normalBlood_gprs'))
 ml_varImp = list()
 # Read it:
 train_test_samples = jsonlite::read_json('./2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/train_test_samples.json',
@@ -444,7 +565,7 @@ ml_res['fba_normalBlood_gprs', 'MCC'] = rf_fba_normalBlood_gprs_mcc$.estimate
 ml_varImp[['fba_normalBlood_gprs']] = caret::varImp(cv_model_rf_fba_normalBlood_gprs)$importance
 
 
-# 8. FBA fluxes in normal blood medium
+# 8. FBA fluxes in tumour blood medium
 # 8.1. Feature Selection
 # 8.1.1. Remove low variance reactions
 genes_to_remove = caret::nearZeroVar(t(fba_tumourBlood)[train_test_samples$train,])
@@ -454,12 +575,12 @@ fitControl = caret::trainControl(method="repeatedcv", number=10, repeats=10)
 cv_model_rf_fba_tumourBlood = caret::train(x = t(fba_normalBlood)[train_test_samples$train,-genes_to_remove],
                                            y = as.factor(metadata[train_test_samples$train, 'cell_type']),
                                            method = 'rf', trControl = fitControl)
-saveRDS(cv_model_rf_fba_tumourBlood, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_fba_tumourBlood_model.RData')
+saveRDS(cv_model_rf_fba_tumourBlood, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/8_fba_tumourBlood_model.RData')
 # 8.2.2. Predict test data:
 predictions_rf_fba_tumourBlood = predict(cv_model_rf_fba_tumourBlood, t(fba_normalBlood)[train_test_samples$test,])
 # 8.2.3. Measure prediction capacity
 rf_fba_tumourBlood_cm = caret::confusionMatrix(predictions_rf_fba_tumourBlood, as.factor(metadata[train_test_samples$test, 'cell_type']))$table
-write.csv(rf_fba_tumourBlood_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_fba_tumourBlood_confusionMatrix.csv')
+write.csv(rf_fba_tumourBlood_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/8_fba_tumourBlood_confusionMatrix.csv')
 rf_fba_tumourBlood_mcc = yardstick::mcc(data.frame(pred=predictions_rf_fba_tumourBlood,
                                                    obs=as.factor(metadata[train_test_samples$test, 'cell_type'])),
                                         'obs', 'pred')
@@ -468,7 +589,7 @@ ml_res['fba_tumourBlood', 'MCC'] = rf_fba_tumourBlood_mcc$.estimate
 ml_varImp[['fba_tumourBlood']] = caret::varImp(cv_model_rf_fba_tumourBlood)$importance
 
 
-# 9. FBA fluxes in normal blood medium, only those with GPRs
+# 9. FBA fluxes in tumour blood medium, only those with GPRs
 # 9.1. Feature Selection
 # 9.1.1. Remove low variance reactions
 genes_to_remove = caret::nearZeroVar(t(fba_tumourBlood_gprs)[train_test_samples$train,])
@@ -478,12 +599,12 @@ fitControl = caret::trainControl(method="repeatedcv", number=10, repeats=10)
 cv_model_rf_fba_tumourBlood_gprs = caret::train(x = t(fba_tumourBlood_gprs)[train_test_samples$train,-genes_to_remove],
                                                 y = as.factor(metadata[train_test_samples$train, 'cell_type']),
                                                 method = 'rf', trControl = fitControl)
-saveRDS(cv_model_rf_fba_tumourBlood_gprs, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/7_fba_tumourBlood_gprs_model.RData')
+saveRDS(cv_model_rf_fba_tumourBlood_gprs, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/9_fba_tumourBlood_gprs_model.RData')
 # 9.2.2. Predict test data:
 predictions_rf_fba_tumourBlood_gprs = predict(cv_model_rf_fba_tumourBlood_gprs, t(fba_tumourBlood_gprs)[train_test_samples$test,])
 # 9.2.3. Measure prediction capacity
 rf_fba_tumourBlood_gprs_cm = caret::confusionMatrix(predictions_rf_fba_tumourBlood_gprs, as.factor(metadata[train_test_samples$test, 'cell_type']))$table
-write.csv(rf_fba_tumourBlood_gprs_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/7_fba_tumourBlood_gprs_confusionMatrix.csv')
+write.csv(rf_fba_tumourBlood_gprs_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/9_fba_tumourBlood_gprs_confusionMatrix.csv')
 rf_fba_tumourBlood_gprs_mcc = yardstick::mcc(data.frame(pred=predictions_rf_fba_tumourBlood_gprs,
                                                         obs=as.factor(metadata[train_test_samples$test, 'cell_type'])),
                                              'obs', 'pred')
@@ -492,18 +613,127 @@ ml_res['fba_tumourBlood_gprs', 'MCC'] = rf_fba_tumourBlood_gprs_mcc$.estimate
 ml_varImp[['fba_tumourBlood_gprs']] = caret::varImp(cv_model_rf_fba_tumourBlood_gprs)$importance
 
 
-# 10. Store MCC metric values and variable importance list:
+# 10. pFBA fluxes in normal blood medium
+# 10.1. Feature Selection
+# 10.1.1. Remove low variance reactions
+genes_to_remove = caret::nearZeroVar(t(pfba_normalBlood)[train_test_samples$train,])
+# 10.2. Random Forest
+# 10.2.1. Train:
+fitControl = caret::trainControl(method="repeatedcv", number=10, repeats=10)
+cv_model_rf_pfba_normalBlood = caret::train(x = t(pfba_normalBlood)[train_test_samples$train,-genes_to_remove],
+                                           y = as.factor(metadata[train_test_samples$train, 'cell_type']),
+                                           method = 'rf', trControl = fitControl)
+saveRDS(cv_model_rf_pfba_normalBlood, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_model.RData')
+# 10.2.2. Predict test data:
+predictions_rf_pfba_normalBlood = predict(cv_model_rf_pfba_normalBlood, t(pfba_normalBlood)[train_test_samples$test,])
+# 10.2.3. Measure prediction capacity
+rf_pfba_normalBlood_cm = caret::confusionMatrix(predictions_rf_pfba_normalBlood, as.factor(metadata[train_test_samples$test, 'cell_type']))$table
+write.csv(rf_pfba_normalBlood_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_confusionMatrix.csv')
+rf_pfba_normalBlood_mcc = yardstick::mcc(data.frame(pred=predictions_rf_pfba_normalBlood,
+                                                   obs=as.factor(metadata[train_test_samples$test, 'cell_type'])),
+                                        'obs', 'pred')
+ml_res['pfba_normalBlood', 'MCC'] = rf_pfba_normalBlood_mcc$.estimate
+# 10.2.4. Variable Importance:
+ml_varImp[['pfba_normalBlood']] = caret::varImp(cv_model_rf_pfba_normalBlood)$importance
+
+
+# 11. pFBA fluxes in normal blood medium, only with GPRs
+# 11.1. Feature Selection
+# 11.1.1. Remove low variance reactions
+genes_to_remove = caret::nearZeroVar(t(pfba_normalBlood_gprs)[train_test_samples$train,])
+# 11.2. Random Forest
+# 11.2.1. Train:
+fitControl = caret::trainControl(method="repeatedcv", number=10, repeats=10)
+cv_model_rf_pfba_normalBlood_gprs = caret::train(x = t(pfba_normalBlood_gprs)[train_test_samples$train,-genes_to_remove],
+                                            y = as.factor(metadata[train_test_samples$train, 'cell_type']),
+                                            method = 'rf', trControl = fitControl)
+saveRDS(cv_model_rf_pfba_normalBlood_gprs, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_gprs_model.RData')
+# 11.2.2. Predict test data:
+predictions_rf_pfba_normalBlood_gprs = predict(cv_model_rf_pfba_normalBlood_gprs, t(pfba_normalBlood_gprs)[train_test_samples$test,])
+# 11.2.3. Measure prediction capacity
+rf_pfba_normalBlood_gprs_cm = caret::confusionMatrix(predictions_rf_pfba_normalBlood_gprs, as.factor(metadata[train_test_samples$test, 'cell_type']))$table
+write.csv(rf_pfba_normalBlood_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_gprs_confusionMatrix.csv')
+rf_pfba_normalBlood_gprs_mcc = yardstick::mcc(data.frame(pred=predictions_rf_pfba_normalBlood_gprs,
+                                                    obs=as.factor(metadata[train_test_samples$test, 'cell_type'])),
+                                         'obs', 'pred')
+ml_res['pfba_normalBlood_gprs', 'MCC'] = rf_pfba_normalBlood_gprs_mcc$.estimate
+# 11.2.4. Variable Importance:
+ml_varImp[['pfba_normalBlood_gprs']] = caret::varImp(cv_model_rf_pfba_normalBlood_gprs)$importance
+
+
+# 12. pFBA biomass fluxes in normal blood medium
+# 12.1. Feature Selection
+# 12.1.1. Remove low variance reactions
+genes_to_remove = caret::nearZeroVar(t(pfba_normalBlood_biomass)[train_test_samples$train,])
+# 12.2. Random Forest
+# 12.2.1. Train:
+fitControl = caret::trainControl(method="repeatedcv", number=10, repeats=10)
+cv_model_rf_pfba_biomass_normalBlood = caret::train(x = t(pfba_normalBlood_biomass)[train_test_samples$train,-genes_to_remove],
+                                            y = as.factor(metadata[train_test_samples$train, 'cell_type']),
+                                            method = 'rf', trControl = fitControl)
+saveRDS(cv_model_rf_pfba_biomass_normalBlood, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_model.RData')
+# 12.2.2. Predict test data:
+predictions_rf_pfba_biomass_normalBlood = predict(cv_model_rf_pfba_biomass_normalBlood, t(pfba_normalBlood_biomass)[train_test_samples$test,])
+# 12.2.3. Measure prediction capacity
+rf_pfba_biomass_normalBlood_cm = caret::confusionMatrix(predictions_rf_pfba_biomass_normalBlood, as.factor(metadata[train_test_samples$test, 'cell_type']))$table
+write.csv(rf_pfba_biomass_normalBlood_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_biomass_confusionMatrix.csv')
+rf_pfba_biomass_normalBlood_mcc = yardstick::mcc(data.frame(pred=predictions_rf_pfba_biomass_normalBlood,
+                                                    obs=as.factor(metadata[train_test_samples$test, 'cell_type'])),
+                                         'obs', 'pred')
+ml_res['pfba_biomass_normalBlood', 'MCC'] = rf_pfba_biomass_normalBlood_mcc$.estimate
+# 11.2.4. Variable Importance:
+ml_varImp[['pfba_biomass_normalBlood']] = caret::varImp(cv_model_rf_pfba_biomass_normalBlood)$importance
+
+
+# 12. pFBA biomass fluxes in normal blood medium, only with GPRs
+# 12.1. Feature Selection
+# 12.1.1. Remove low variance reactions
+genes_to_remove = caret::nearZeroVar(t(pfba_normalBlood_biomass_gprs)[train_test_samples$train,])
+# 12.2. Random Forest
+# 12.2.1. Train:
+fitControl = caret::trainControl(method="repeatedcv", number=10, repeats=10)
+cv_model_rf_pfba_biomass_normalBlood_gprs = caret::train(x = t(pfba_normalBlood_biomass_gprs)[train_test_samples$train,-genes_to_remove],
+                                                    y = as.factor(metadata[train_test_samples$train, 'cell_type']),
+                                                    method = 'rf', trControl = fitControl)
+saveRDS(cv_model_rf_pfba_biomass_normalBlood_gprs, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_gprs_model.RData')
+# 12.2.2. Predict test data:
+predictions_rf_pfba_biomass_normalBlood_gprs = predict(cv_model_rf_pfba_biomass_normalBlood_gprs, t(pfba_normalBlood_biomass_gprs)[train_test_samples$test,])
+# 12.2.3. Measure prediction capacity
+rf_pfba_biomass_normalBlood_gprs_cm = caret::confusionMatrix(predictions_rf_pfba_biomass_normalBlood_gprs, as.factor(metadata[train_test_samples$test, 'cell_type']))$table
+write.csv(rf_pfba_biomass_normalBlood_cm, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/6_pfba_normalBlood_biomass_gprs_confusionMatrix.csv')
+rf_pfba_biomass_normalBlood_gprs_mcc = yardstick::mcc(data.frame(pred=predictions_rf_pfba_biomass_normalBlood_gprs,
+                                                            obs=as.factor(metadata[train_test_samples$test, 'cell_type'])),
+                                                 'obs', 'pred')
+ml_res['pfba_biomass_normalBlood_gprs', 'MCC'] = rf_pfba_biomass_normalBlood_gprs_mcc$.estimate
+# 11.2.4. Variable Importance:
+ml_varImp[['pfba_biomass_normalBlood_gprs']] = caret::varImp(cv_model_rf_pfba_biomass_normalBlood_gprs)$importance
+
+
+# 12. Store MCC metric values and variable importance list:
 write.csv(ml_res, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/MCC.csv')
 jsonlite::write_json(ml_varImp, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/Genes_to_Fluxes/ml/varImp.json')
 
 
-# 11. Visualize MCCs
+# 13. Visualize MCCs
 plot_df = data.frame(mcc=ml_res$MCC, dataset=rownames(ml_res))
-# 11.1 Just with CPMs, FBA normal blood and reaction presence (GPRs)
-plot_df2 = plot_df[c(1,5,7),]
-plot_df2$dataset = factor(c('Pseudo-Bulk RNA (CPMs)', 'Reaction Presence', 'FBA Normal Blood'),
-                          levels=c('Pseudo-Bulk RNA (CPMs)', 'Reaction Presence', 'FBA Normal Blood'))
+# 13.1 Just with CPMs, FBA normal blood and reaction presence (GPRs)
+# ADD THE FLUXPREDICTIONS WITHOUT GPRS AND REACTION PRESENCE WITHOUT GPRS
+plot_df2 = plot_df[c(1, 4, 5, 8, 9, 10, 11),]
+plot_df2$dataset = factor(c('Pseudo-Bulk (CPMs)', 'Rxn Presence', 'Rxn Presence GPRs',
+                            'pFBA', 'pFBA GPRs', 'pFBA Biomass', 'pFBA Biomass GPRs'),
+                          levels=c('Pseudo-Bulk (CPMs)', 'Rxn Presence', 'Rxn Presence GPRs',
+                                   'pFBA', 'pFBA GPRs', 'pFBA Biomass', 'pFBA Biomass GPRs'))
 ggplot2::ggplot(plot_df2, ggplot2::aes(y=mcc, x=dataset)) +
   ggplot2::geom_bar(stat="identity", fill='#E69F00', colour='black', width=0.5) +
-  ggplot2::theme_minimal() + ggplot2::xlab('') + ggplot2::ylab('MCC') + ggplot2::ylim(-.05, 1) #+
-  #ggplot2::theme(axis.text.x=ggplot2::element_text(angle=20, hjust=1, vjust=1))
+  ggplot2::theme_minimal() + ggplot2::xlab('') + ggplot2::ylab('MCC') + ggplot2::ylim(0, 1) #+
+  #ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1.4))
+
+ggplot2::ggplot(plot_df2[1:5, ], ggplot2::aes(y=mcc, x=dataset)) +
+  ggplot2::geom_bar(stat="identity", fill='#E69F00', colour='black', width=0.5) +
+  ggplot2::theme_minimal() + ggplot2::xlab('') + ggplot2::ylab('MCC') + ggplot2::ylim(0, 1) #+
+#ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1.4))
+
+ggplot2::ggplot(plot_df2[4:7, ], ggplot2::aes(y=mcc, x=dataset)) +
+  ggplot2::geom_bar(stat="identity", fill='#E69F00', colour='black', width=0.5) +
+  ggplot2::theme_minimal() + ggplot2::xlab('') + ggplot2::ylab('MCC') + ggplot2::ylim(0, .5) #+
+#ggplot2::theme(axis.text.x=ggplot2::element_text(angle=30, hjust=1, vjust=1.4))

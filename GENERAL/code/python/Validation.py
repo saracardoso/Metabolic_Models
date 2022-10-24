@@ -1,14 +1,17 @@
 from datetime import datetime
 from os.path import join
 from os import listdir
+
+import numpy as np
 from dill import load
-from pandas import read_csv, concat
+from pandas import read_csv, concat, Series
 from gc import collect
 from re import search
 from math import isnan
 
 from cobra.sampling import OptGPSampler
 from cobra.flux_analysis.room import room
+from cobra.flux_analysis import pfba
 from cobra import Solution
 
 
@@ -92,12 +95,20 @@ def fba_evaluations(model, fva_results, fba_result, change_media_bounds: dict = 
                 model_test.reactions.get_by_id(rxn).bounds = rxn_bounds
         print(datetime.now().strftime('-Starting FBA...'))
         if count == 0:
-            solFBA = model_test.optimize(objective_sense='maximize')
+            try:
+                #solFBA = model_test.optimize(objective_sense='maximize')
+                solFBA = pfba(model_test)
+            except:
+                print('Infeasible')
+                solFBA = Series(np.zeros(11894).tolist())
+            else:
+                solFBA = solFBA.fluxes
         else:
             # ROOM
             solFBA = room(model_test, solution=fba_result, linear=True)
+            solFBA = solFBA.fluxes
         print('-Done!')
-    return solFBA.fluxes
+    return solFBA#.fluxes
 
 
 def helper_fba_condition_normalmatched(condition, media_file, medium, models_use, models_dir,
@@ -121,20 +132,23 @@ def helper_fba_condition_normalmatched(condition, media_file, medium, models_use
                         media = read_csv(media_file, index_col='ID')
                         model.medium = media[medium].to_dict()
                         # Get objective
-                        fba_orignal_fluxes = fba_results.loc[:, model_name]
-                        if cell_type in ['Proliferative CD4 Tcells', 'Proliferative CD8 Tcells']:
-                            model.objective = {model.reactions.MAR13082: 1}
-                            fba_orig_value = fba_orignal_fluxes['MAR13082']
-                        else:
-                            model.objective = {model.reactions.MAR13082: 1, model.reactions.MAR06916: 1}
-                            fba_orig_value = fba_orignal_fluxes['MAR13082'] + fba_orignal_fluxes['MAR06916']
-                        fba_result = Solution(fba_orig_value, 'optimal', fluxes=fba_orignal_fluxes)
+                        # ---
+                        #fba_orignal_fluxes = fba_results.loc[:, model_name]
+                        #if cell_type in ['Proliferative CD4 Tcells', 'Proliferative CD8 Tcells']:
+                        #    model.objective = {model.reactions.MAR13082: 1}
+                        #    fba_orig_value = fba_orignal_fluxes['MAR13082']
+                        #else:
+                        #    model.objective = {model.reactions.MAR13082: 1, model.reactions.MAR06916: 1}
+                        #    fba_orig_value = fba_orignal_fluxes['MAR13082'] + fba_orignal_fluxes['MAR06916']
+                        #fba_result = Solution(fba_orig_value, 'optimal', fluxes=fba_orignal_fluxes)
+                        model.objective = {model.reactions.MAR13082: 1}
+                        # ---
                         # Run FBA
                         #fluxes = fba_evaluations(model, fva_results['_'.join((indiv, samp_name, cell_type))],
                         #                         fba_results.loc[:,'_'.join((indiv, samp_name, cell_type))],
                         #                         change_media_bounds=condition['change_media_bounds'],
                         #                         change_internal_bounds=condition['change_internal_bounds'])
-                        fluxes = fba_evaluations(model, None, fba_result,
+                        fluxes = fba_evaluations(model, None, None, #fba_result,
                                                  change_media_bounds=condition['change_media_bounds'],
                                                  change_internal_bounds=condition['change_internal_bounds'])
                         # Save predicted fluxes

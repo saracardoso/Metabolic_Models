@@ -33,5 +33,15 @@ for(indiv in c('31', '32', '33', '35', 'KUL01', 'KUL19', 'KUL21', 'SMC01', 'SMC0
 }
 final_meta = data.frame(individual=indivs, sample=samples, cell_type=cell_types, state=states,
                         n_reactions=n_rxnss, row.names = models_names)
-write.csv(final_meta, '/home/scardoso/Documents/PhD/Metabolic_Models/2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/metadata.csv')
+final_meta = final_meta[final_meta$cell_type!='IL22+ CD4 Tcells',]
+# Get CMS types:
+tumour_meta = read.csv('./0Data/scRNAseq/CRC_atlas/atlas/Epithelial_tumour.csv', row.names=1)[, c('Sample', 'Annotation_2')]
+tumour_meta = unique(tumour_meta)
+final_meta$CMS = 'Normal Matched'
+for(samp_idx in 1:dim(tumour_meta)[1])
+  final_meta[final_meta$sample==tumour_meta$Sample[samp_idx], 'CMS'] = tumour_meta$Annotation_2[samp_idx]
+write.csv(final_meta, './2_RECONSTRUCTIONS_scRNAseq/CRC_atlas/NormalMatched/metadata.csv')
+
+
+
 
