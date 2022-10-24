@@ -22,9 +22,11 @@ This repository stores all code developed to reconstruct and analyse the models,
 
 The T-cells models can be found, in the *SBML* format, in the following folder of this repository: `0MODELS/CRC_atlas`. The folder is organized as follows:
 
-`-/<cell_type>/`
-`-----/NormalMatched/ OR /Tumour/`
-`----------/<indiv><sample><cell_type>.xml.gz`
+` /<cell_type>/`
+
+`     /NormalMatched/ OR /Tumour/`
+
+`          /<indiv><sample><cell_type>.xml.gz`
 
 
 ## Structure of the project
