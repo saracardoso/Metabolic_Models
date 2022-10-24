@@ -24,9 +24,9 @@ The T-cells models can be found, in the *SBML* format, in the following folder o
 
 `-/<cell_type>/`
 
-`-----/NormalMatched/ OR /Tumour/`
+`-----NormalMatched/ OR Tumour/`
 
-`----------/<indiv><sample><cell_type>.xml.gz`
+`----------<indiv><sample><cell_type>.xml.gz`
 
 
 ## Structure of the project
